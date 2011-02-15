@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #define CHARMAX 1024
 
 typedef struct rss_item_t {
@@ -13,6 +14,7 @@ typedef struct rss_feed_t {
   char desc[CHARMAX];
   rss_item *first;
   rss_item *last;
+  int articles;
 } rss_feed;
 
 struct MemoryStruct {

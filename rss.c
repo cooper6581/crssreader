@@ -128,6 +128,7 @@ _parse_items(rss_feed *r, xmlDocPtr doc, xmlNodePtr cur)
   }
   r->last->next=ri;
   r->last = ri;
+  r->articles++;
 }
 
 // Grabs the title, link, and description of an RSS reed, then calls
@@ -196,7 +197,9 @@ load_feed(char *url)
   return r;
   }
 
+  // TODO: Not clean
   r.first = NULL;
+  r.articles = 0;
   _parse_feed(&r, doc, cur);
 
   if(buffer.memory)
