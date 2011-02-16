@@ -1,42 +1,42 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
-#ifndef RSS_H
-#define RSS_H
-#include "rss.h"
-#endif
 #include "curses.h"
+#include "rss.h"
 #include "window.h"
 
+// our global rss_view
+extern rss_view_t rv;
+
 int main(int argc, char **argv) {
-  rss_view_t view;
   rss_feed rf;
 
-  view = init_view();
+  assert(init_view());
   rf = load_feed(argv[1]);
-  add_feed(&rf,&view);
+  add_feed(&rf);
+  draw_articles();
+  refresh();
+  prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
 
   // Main loop
   for(;;) {
-    view.c = getch();
-    switch(view.c) {
-      case 'q':
-        break;
-      case 'j':
-        waddstr(view.w_articles,"blkahblalblhab");
-        prefresh(view.w_articles,0,0,0,0,16,16);
-        continue;
+    rv.c = getch();
+    if(rv.c == 'q')
+      break;
+    else if (rv.c == 'j') {
+      rv.cursor += 1;
+      draw_articles();
     }
-    break;
+    else if (rv.c == 'k') {
+      rv.cursor -= 1;
+      draw_articles();
+    }
+    else if (rv.c == '\n')
+     select_article();
   }
 
+  // cleanup
   endwin();
   free_feed(&rf);
+  cleanup_view();
   return 0;
 }
 
-/*
-void
-draw_articles(void) {
-  werase(pad);
-  */

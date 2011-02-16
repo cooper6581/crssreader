@@ -1,3 +1,6 @@
+#ifndef RSS_H
+#define RSS_H
+
 #include <stdlib.h>
 #define CHARMAX 1024
 
@@ -25,3 +28,6 @@ struct MemoryStruct {
 rss_feed load_feed(char *url);
 void print_feed(rss_feed *r);
 void free_feed(rss_feed *r);
+rss_item * get_item(rss_feed *rf, int index);
+
+#endif

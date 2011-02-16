@@ -235,3 +235,12 @@ free_feed(rss_feed *r)
   if(r->first != NULL)
     _free_items(r);
 }
+
+rss_item *
+get_item(rss_feed *rf, int index)
+{
+  rss_item *ri = rf->first;
+  for(int i=0;i<index && ri->next != NULL;i++)
+	ri = ri->next;
+  return ri;
+}

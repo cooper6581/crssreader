@@ -1,7 +1,7 @@
-#ifndef RSS_H
-#define RSS_H
+#ifndef WINDOW_H
+#define WINDOW_H
+
 #include "rss.h"
-#endif
 #include "curses.h"
 
 // struct used to represent data which is displayed in an rss window
@@ -16,6 +16,8 @@ typedef struct rss_window {
 typedef struct rss_view {
   // our awesome 1 byte input buffer!
   char c;
+  // Our global cursor
+  int cursor;
   // the size of the terminal window when ncurses is launched, or when the
   // window is resized
   int x_par;
@@ -24,9 +26,15 @@ typedef struct rss_view {
   WINDOW *w_par;
   WINDOW *w_articles;
   // Linked list of rss_windows
-  rss_window_t *rss_windows;
+  rss_window_t *rw;
 } rss_view_t;
 
-rss_view_t init_view(void);
-int add_feed(rss_feed *rf, rss_view_t *rv);
+int init_view(void);
+int add_feed(rss_feed *rf);
+void draw_articles(void);
+void cleanup_view(void);
+void draw_status(const char *msg);
+void select_article(void);
+void debug_msg(const char *msg);
 
+#endif
