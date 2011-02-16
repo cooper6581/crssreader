@@ -9,10 +9,14 @@ extern rss_view_t rv;
 int main(int argc, char **argv) {
   char reddit[] = "http://www.reddit.com/r/programming/.rss";
   char git[] = "http://github-trends.oscardelben.com/explore/week.xml";
+  char cl[] = "http://feeds.feedburner.com/thechangelog?format=xml";
+  char sd[] = "http://rss.slashdot.org/Slashdot/slashdot";
 
   assert(init_view());
   add_feed(reddit);
   add_feed(git);
+  add_feed(cl);
+  add_feed(sd);
 
   draw_articles();
   refresh();

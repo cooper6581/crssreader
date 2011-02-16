@@ -67,7 +67,9 @@ _load_url(char *url)
    * allocated data block, and nothing has yet deallocated that data. So when
    * you're done with it, you should free() it as a nice application.
    */
+#ifdef DEBUG
   printf("%lu bytes retrieved\n", (long)chunk.size);
+#endif
 
   /* we're done with libcurl, so clean it up */
   curl_global_cleanup();
@@ -139,22 +141,10 @@ _parse_items(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
   r->articles++;
 }
 
-// Grabs the title, link, and description of an RSS reed, then calls
-// _parse_items to handle the linked list
-// TODO:  Find the correct way to dynamically support namespaces
 static void
-_parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
+_parse_channel(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
 {
   xmlChar *key;
-
-  // Channel
-  cur = cur->xmlChildrenNode;
-  // HACK:  This deals with xml files that have namespaces
-  if(cur->xmlChildrenNode == NULL)
-    cur = cur->next;
-  // Should be the ticket!
-  cur = cur->xmlChildrenNode;
-  // Now we will populate the feed information
   while (cur != NULL) {
     if (xmlStrcmp(cur->name, (const xmlChar *)"title") == 0) {
      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
@@ -177,9 +167,37 @@ _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
        xmlFree(key);
      }
     }
-    else if  (xmlStrcmp(cur->name, (const xmlChar *)"item") == 0)
-      _parse_items(r, doc, cur);
+    cur=cur->next;
+  }
+}
 
+
+// Grabs the title, link, and description of an RSS reed, then calls
+// _parse_items to handle the linked list
+// TODO:  Find the correct way to dynamically support namespaces
+static void
+_parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
+{
+  // Channel
+  cur = cur->xmlChildrenNode;
+  // HACK:  This deals with xml files that have namespaces
+  if(cur->xmlChildrenNode == NULL)
+    cur = cur->next;
+  // This is a really bad way to find out if the current
+  // xml file being parsed has a namespace.  If so, I assume
+  // it is slashdot, and parse the channel info from the child
+  // _parse_items should be handling this
+  if(cur->ns != NULL) {
+    _parse_channel(r,doc,cur->xmlChildrenNode);
+  }
+  else {
+    cur = cur->xmlChildrenNode;
+    _parse_channel(r,doc,cur);
+  }
+  // Now we will populate the feed information
+  while (cur != NULL) {
+    if  (xmlStrcmp(cur->name, (const xmlChar *)"item") == 0)
+      _parse_items(r, doc, cur);
     cur=cur->next;
   }
 }

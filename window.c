@@ -59,17 +59,28 @@ void
 cleanup_view(void)
 {
   rss_window_t *rw;
-  rv.windex = 0;
-  for(rv.windex=0;rv.windex<rv.w_amount;rv.windex++) {
-    rw = get_current_rss_window();
-#ifdef DEBUG
-    printf("Freeing feed\n");
-#endif
+  rss_window_t *temp;
+  rw = rv.rw_first;
+  int w = 0;
+
+  if(rv.w_amount == 1) {
     free_feed(rw->r);
 #ifdef DEBUG
-    printf("Freeing window %d\n",rv.windex);
+    printf("Freeing window %d\n",w++);
 #endif
     free(rw);
+  }
+
+  else {
+  while(rw != NULL) {
+    temp = rw->next;
+    free_feed(rw->r);
+#ifdef DEBUG
+    printf("Freeing window %d\n",w++);
+#endif
+    free(rw);
+    rw = temp;
+  }
   }
 }
 
