@@ -162,6 +162,9 @@ select_article()
   char command[1024];
   rss_item_t *ri = NULL;
   ri = get_item(rw->r,rv.cursor);
+#ifdef LINUX
+  snprintf(command,1024,"gnome-open \"%s\"",ri->link);
+#endif
   snprintf(command,1024,"open \"%s\"",ri->link);
   system(command);
 }
