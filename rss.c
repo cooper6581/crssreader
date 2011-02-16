@@ -5,6 +5,7 @@
 #include <curl/curl.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
+#include <assert.h>
 
 #include "rss.h"
 
@@ -76,24 +77,31 @@ _load_url(char *url)
 
 // free's the rss item linked list
 static void
-_free_items(rss_feed *r)
+_free_items(rss_feed_t *r)
 {
-  rss_item *ri;
+  int i = 0;
+  rss_item_t *ri;
+  rss_item_t *temp;
   ri = r->first;
   while(ri != NULL) {
+#ifdef DEBUG
+    printf("Freeing article %02d\n",i);
+#endif
+    temp = ri->next;
     free(ri);
-    ri=ri->next;
+    ri=temp;
+    i++;
   }
 }
 
 // Populates the rss item linked list
 static void
-_parse_items(rss_feed *r, xmlDocPtr doc, xmlNodePtr cur)
+_parse_items(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
 {
   xmlChar *key;
-  rss_item *ri;
+  rss_item_t *ri;
 
-  ri = malloc(sizeof(rss_item));
+  ri = malloc(sizeof(rss_item_t));
   ri->next = NULL;
   // Drilling down into the item children
   cur = cur->xmlChildrenNode;
@@ -133,13 +141,17 @@ _parse_items(rss_feed *r, xmlDocPtr doc, xmlNodePtr cur)
 
 // Grabs the title, link, and description of an RSS reed, then calls
 // _parse_items to handle the linked list
+// TODO:  Find the correct way to dynamically support namespaces
 static void
-_parse_feed(rss_feed *r, xmlDocPtr doc, xmlNodePtr cur)
+_parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
 {
   xmlChar *key;
 
   // Channel
   cur = cur->xmlChildrenNode;
+  // HACK:  This deals with xml files that have namespaces
+  if(cur->xmlChildrenNode == NULL)
+    cur = cur->next;
   // Should be the ticket!
   cur = cur->xmlChildrenNode;
   // Now we will populate the feed information
@@ -173,48 +185,53 @@ _parse_feed(rss_feed *r, xmlDocPtr doc, xmlNodePtr cur)
 }
 
 // public function, returns an rss feed item
-rss_feed
+rss_feed_t *
 load_feed(char *url)
 {
-  rss_feed r;
+  rss_feed_t *rf = NULL;
   xmlDocPtr doc;
   xmlNodePtr cur;
   struct MemoryStruct buffer;
 
+  // Here we are going to load the url into memory
   buffer = _load_url(url);
   // do xml parsing
   doc = xmlReadMemory(buffer.memory,buffer.size,"noname.xml",NULL,0);
   if (doc == NULL) {
-  fprintf(stderr,"Unable to parse xml from %s\n",url);
-  return r;
+    fprintf(stderr,"Unable to parse xml from %s\n",url);
+    return NULL;
   }
 
   cur = xmlDocGetRootElement(doc);
 
   if (cur == NULL) {
-  fprintf(stderr,"empty document\n");
-  xmlFreeDoc(doc);
-  return r;
+    fprintf(stderr,"empty document\n");
+    xmlFreeDoc(doc);
+    return NULL;
   }
 
+  rf = malloc(sizeof(rss_feed_t));
+
+  assert(rf != NULL);
+
   // TODO: Not clean
-  r.first = NULL;
-  r.articles = 0;
-  _parse_feed(&r, doc, cur);
+  rf->first = NULL;
+  rf->articles = 0;
+  _parse_feed(rf, doc, cur);
 
   if(buffer.memory)
     free(buffer.memory);
   if(doc)
     xmlFreeDoc(doc);
 
-  return r;
+  return rf;
 }
 
 // public function to print an rss feed
 void
-print_feed(rss_feed *r)
+print_feed(rss_feed_t *r)
 {
-  rss_item *ri;
+  rss_item_t *ri;
   int article_number = 1;
 
   printf("Title: %s\n", r->title);
@@ -230,17 +247,17 @@ print_feed(rss_feed *r)
 
 // public function to cleanup an rss feed
 void
-free_feed(rss_feed *r)
+free_feed(rss_feed_t *rf)
 {
-  if(r->first != NULL)
-    _free_items(r);
+  if(rf->first != NULL)
+    _free_items(rf);
 }
 
-rss_item *
-get_item(rss_feed *rf, int index)
+rss_item_t *
+get_item(rss_feed_t *rf, int index)
 {
-  rss_item *ri = rf->first;
+  rss_item_t *ri = rf->first;
   for(int i=0;i<index && ri->next != NULL;i++)
-	ri = ri->next;
+  ri = ri->next;
   return ri;
 }

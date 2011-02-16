@@ -1,6 +1,7 @@
 #include "window.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define PADLINES 128
 
@@ -11,8 +12,10 @@ rss_view_t rv;
 int
 init_view(void)
 {
-  rv.rw = NULL;
+  rv.rw_first = NULL;
   rv.cursor = 0;
+  rv.windex = 0;
+  rv.w_amount = 0;
   rv.w_par = initscr();
   assert(rv.w_par != NULL);
   raw();
@@ -28,22 +31,46 @@ init_view(void)
 }
 
 int
-add_feed(rss_feed *rf)
+add_feed(char *url)
 {
   rss_window_t *rw;
+  rss_feed_t *rf;
+
+  rf = load_feed(url);
+
+  // setup our rss window
   rw = malloc(sizeof(rss_window_t));
   rw->cursor = 0;
   rw->r = rf;
-  rv.rw = rw;
+  rw->next = NULL;
 
+  // add the rss window
+  if(rv.rw_first == NULL) {
+    rv.rw_first = rw;
+    rv.rw_last = rw;
+  }
+  rv.rw_last->next = rw;
+  rv.rw_last = rw;
+  rv.w_amount++;
   return 0;
 }
 
 void
 cleanup_view(void)
 {
-  if (rv.rw != NULL)
-    free(rv.rw);
+  rss_window_t *rw;
+  rv.windex = 0;
+  for(rv.windex=0;rv.windex<rv.w_amount;rv.windex++) {
+    rw = get_current_rss_window();
+#ifdef DEBUG
+    printf("Freeing feed\n");
+#endif
+    free_feed(rw->r);
+#ifdef DEBUG
+    printf("Freeing window %d\n",rv.windex);
+#endif
+    free(rw);
+  }
 }
 
 // This should be redesigned to not take rss_view
@@ -57,15 +84,18 @@ cleanup_view(void)
 void
 draw_articles(void)
 {
-  rss_item *ri = NULL;
+  rss_item_t *ri = NULL;
+  rss_window_t *rw = NULL;
+
+  rw = get_current_rss_window();
   werase(rv.w_articles);
   if (rv.cursor < 0)
-    rv.cursor = rv.rw->r->articles;
-  if (rv.cursor >= rv.rw->r->articles)
+    rv.cursor = rw->r->articles;
+  if (rv.cursor >= rw->r->articles)
     rv.cursor = 0;
 
-  ri = rv.rw->r->first;
-  for(int i = 0;ri->next != NULL;i++,ri=ri->next) {
+  ri = rw->r->first;
+  for(int i = 0;ri != NULL;i++,ri=ri->next) {
     if (i == rv.cursor) {
       wattron(rv.w_articles,A_REVERSE);
       mvwaddstr(rv.w_articles,i,0,ri->title);
@@ -75,7 +105,7 @@ draw_articles(void)
     mvwaddstr(rv.w_articles,i,0,ri->title);
   }
   draw_status(NULL);
-  if (rv.rw->r->articles > rv.y_par-2 && 
+  if (rw->r->articles > rv.y_par-2 && 
       rv.cursor > rv.y_par-2)
     prefresh(rv.w_articles,rv.cursor - rv.y_par + 2,
         0,0,0,rv.y_par-2,rv.x_par);
@@ -83,23 +113,45 @@ draw_articles(void)
     prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
 }
 
+static char *
+_pad_message(const char *msg)
+{
+  char *padded = NULL;
+  int size_of_msg = 0;
+  padded = malloc(sizeof(char) * rv.x_par);
+  assert (padded != NULL);
+  size_of_msg = (int) strlen(msg);
+  strncpy(padded,msg,rv.x_par);
+  for(int i=size_of_msg;i<rv.x_par;i++)
+    padded[i] = ' ';
+
+  return padded;
+}
+
 void
 draw_status(const char *msg)
 {
+  char *test_message;
   wclear(rv.w_par);
   wattron(rv.w_par,A_REVERSE);
-  mvwaddstr(rv.w_par,rv.y_par-1,0,msg);
+  test_message = _pad_message("Testing!");
+  mvwaddstr(rv.w_par,rv.y_par-1,0,test_message);
   wattroff(rv.w_par,A_REVERSE);
   refresh();
+  if(test_message)
+    free(test_message);
 }
 
 void
 select_article()
 {
+  rss_window_t *rw;
+
+  rw = get_current_rss_window();
   char command[1024];
-  rss_item *ri = NULL;
-  ri = get_item(rv.rw->r,rv.cursor);
-  snprintf(command,1024,"open %s",ri->link);
+  rss_item_t *ri = NULL;
+  ri = get_item(rw->r,rv.cursor);
+  snprintf(command,1024,"open \"%s\"",ri->link);
   system(command);
 }
 
@@ -111,3 +163,12 @@ debug_msg(const char *msg)
     prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
 }
 
+rss_window_t *
+get_current_rss_window(void)
+{
+  rss_window_t *rw = NULL;
+  rw = rv.rw_first;
+  for(int i = 0; i < rv.windex && rw->next != NULL;i++)
+    rw = rw->next;
+  return rw;
+}

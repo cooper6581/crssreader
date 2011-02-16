@@ -7,11 +7,13 @@
 extern rss_view_t rv;
 
 int main(int argc, char **argv) {
-  rss_feed rf;
+  char reddit[] = "http://www.reddit.com/r/programming/.rss";
+  char git[] = "http://github-trends.oscardelben.com/explore/week.xml";
 
   assert(init_view());
-  rf = load_feed(argv[1]);
-  add_feed(&rf);
+  add_feed(reddit);
+  add_feed(git);
+
   draw_articles();
   refresh();
   prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
@@ -29,13 +31,26 @@ int main(int argc, char **argv) {
       rv.cursor -= 1;
       draw_articles();
     }
+    else if (rv.c == 'H') {
+      if(rv.windex > 0)
+        rv.windex -= 1;
+      else
+        rv.windex = rv.w_amount-1;
+      draw_articles();
+    }
+    else if (rv.c == 'L') {
+      if(rv.windex < rv.w_amount-1)
+        rv.windex += 1;
+      else
+        rv.windex = 0;
+      draw_articles();
+    }
     else if (rv.c == '\n')
      select_article();
   }
 
   // cleanup
   endwin();
-  free_feed(&rf);
   cleanup_view();
   return 0;
 }
