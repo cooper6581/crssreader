@@ -2,21 +2,25 @@
 #include "curses.h"
 #include "rss.h"
 #include "window.h"
+#include "uloader.h"
 
 // our global rss_view
 extern rss_view_t rv;
 
 int main(int argc, char **argv) {
-  char reddit[] = "http://www.reddit.com/r/programming/.rss";
-  char git[] = "http://github-trends.oscardelben.com/explore/week.xml";
-  char cl[] = "http://feeds.feedburner.com/thechangelog?format=xml";
-  char sd[] = "http://rss.slashdot.org/Slashdot/slashdot";
+  struct entries *et;
+  struct entry *e;
+
+  assert(argc == 2);
+  et = load_entries(argv[1]);
+  e = et->head;
 
   assert(init_view());
-  add_feed(reddit);
-  add_feed(git);
-  add_feed(cl);
-  add_feed(sd);
+
+  while(e != NULL) {
+    add_feed(e->url);
+    e = e->next;
+  }
 
   draw_articles();
   refresh();

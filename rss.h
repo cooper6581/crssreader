@@ -15,6 +15,7 @@ typedef struct rss_feed {
   char title[CHARMAX];
   char link[CHARMAX];
   char desc[CHARMAX];
+  char url[CHARMAX];
   rss_item_t *first;
   rss_item_t *last;
   int articles;
