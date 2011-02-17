@@ -45,13 +45,14 @@ add_feed(char *url)
   rw->next = NULL;
 
   // add the rss window
+  rv.w_amount++;
   if(rv.rw_first == NULL) {
     rv.rw_first = rw;
     rv.rw_last = rw;
+    return 0;
   }
   rv.rw_last->next = rw;
   rv.rw_last = rw;
-  rv.w_amount++;
   return 0;
 }
 
@@ -62,25 +63,13 @@ cleanup_view(void)
   rss_window_t *temp;
   rw = rv.rw_first;
   int w = 0;
-
-  if(rv.w_amount == 1) {
-    free_feed(rw->r);
-#ifdef DEBUG
-    printf("Freeing window %d\n",w++);
-#endif
-    free(rw);
-  }
-
-  else {
-  while(rw != NULL) {
+  for(rw = rv.rw_first; rw != NULL; rw=temp) {
     temp = rw->next;
     free_feed(rw->r);
 #ifdef DEBUG
     printf("Freeing window %d\n",w++);
 #endif
     free(rw);
-    rw = temp;
-  }
   }
 }
 
@@ -182,7 +171,7 @@ get_current_rss_window(void)
 {
   rss_window_t *rw = NULL;
   rw = rv.rw_first;
-  for(int i = 0; i < rv.windex && rw->next != NULL;i++)
+  for(int i = 0; i < rv.windex && rw != NULL;i++)
     rw = rw->next;
   return rw;
 }
