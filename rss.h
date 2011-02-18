@@ -16,6 +16,7 @@ typedef struct rss_feed {
   char link[CHARMAX];
   char desc[CHARMAX];
   char url[CHARMAX];
+  char pubdate[CHARMAX];
   rss_item_t *first;
   rss_item_t *last;
   int articles;
@@ -30,5 +31,6 @@ rss_feed_t * load_feed(char *url);
 void print_feed(rss_feed_t *rf);
 void free_feed(rss_feed_t *rf);
 rss_item_t * get_item(rss_feed_t *rf, int index);
+void reload_feed(rss_feed_t *rf);
 
 #endif

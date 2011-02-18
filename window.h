@@ -42,6 +42,7 @@ void cleanup_view(void);
 void draw_status(const char *msg);
 void select_article(void);
 void debug_msg(const char *msg);
+void reload(void);
 rss_window_t * get_current_rss_window(void);
 
 #endif

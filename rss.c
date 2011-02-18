@@ -98,7 +98,7 @@ _free_items(rss_feed_t *r)
 
 // Populates the rss item linked list
 static void
-_parse_items(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
+_parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
 {
   xmlChar *key;
   rss_item_t *ri;
@@ -142,7 +142,52 @@ _parse_items(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
 }
 
 static void
-_parse_channel(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
+_parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
+{
+  xmlChar *key;
+  rss_item_t *ri;
+
+  ri = malloc(sizeof(rss_item_t));
+  ri->next = NULL;
+  // Drilling down into the item children
+  cur = cur->xmlChildrenNode;
+  cur = cur->next;
+  // Cycle through the item child elements, dump these values into our rss item
+  while (cur != NULL) {
+    if (xmlStrcmp(cur->name, (const xmlChar *)"title") == 0) {
+      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+      if (key != NULL) {
+        strncpy(ri->title,(char *)key,CHARMAX);
+        xmlFree(key);
+      }
+    }
+    else if (xmlStrcmp(cur->name, (const xmlChar *)"link") == 0) {
+      key = xmlGetProp(cur,(const xmlChar *)"href");
+      if (key != NULL) {
+        strncpy(ri->link,(char *)key,CHARMAX);
+        xmlFree(key);
+      }
+    }
+    else if (xmlStrcmp(cur->name, (const xmlChar *)"updated") == 0) {
+      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+      if (key != NULL) {
+        strncpy(ri->pubdate,(char *)key,CHARMAX);
+        xmlFree(key);
+      }
+    }
+    cur = cur->next;
+  }
+  if(r->first == NULL) {
+    r->first = ri;
+    r->last = ri;
+  }
+  r->last->next=ri;
+  r->last = ri;
+  r->articles++;
+}
+
+static void
+_parse_channel_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
 {
   xmlChar *key;
   while (cur != NULL) {
@@ -171,13 +216,66 @@ _parse_channel(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
   }
 }
 
+static void
+_parse_channel_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
+{
+  xmlChar *key;
+  cur = cur->next;
+  while(cur != NULL) {
+    if (xmlStrcmp(cur->name, (const xmlChar *)"title") == 0) {
+      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+      if (key != NULL) {
+       strncpy(r->title,(char *)key,CHARMAX);
+       xmlFree(key);
+      }
+    }
+    else if (xmlStrcmp(cur->name, (const xmlChar *)"subtitle") == 0) {
+      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+      if (key != NULL) {
+       strncpy(r->desc,(char *)key,CHARMAX);
+       xmlFree(key);
+      }
+    }
+    else if (xmlStrcmp(cur->name, (const xmlChar *)"link") == 0) {
+      xmlChar *link_type;
+      link_type = xmlGetProp(cur,(const xmlChar *)"rel");
+      // We only care about the self link, not the alternate link
+      if(xmlStrcmp(link_type, (const xmlChar *)"self") == 0) {
+        key = xmlGetProp(cur,(const xmlChar *)"href");
+        if (key != NULL) {
+          strncpy(r->link,(char *)key,CHARMAX);
+          xmlFree(key);
+        }
+      }
+      if(link_type)
+        xmlFree(link_type);
+    }
+    else if (xmlStrcmp(cur->name, (const xmlChar *)"updated") == 0) {
+      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+      if (key != NULL) {
+       strncpy(r->pubdate,(char *)key,CHARMAX);
+       xmlFree(key);
+      }
+    }
+    else if (xmlStrcmp(cur->name, (const xmlChar *)"entry") == 0) {
+      _parse_items_atom(r,doc,cur);
+    }
+    cur = cur->next;
+  }
+}
+
 
 // Grabs the title, link, and description of an RSS reed, then calls
-// _parse_items to handle the linked list
+// _parse_items_rss to handle the linked list
 // TODO:  Find the correct way to dynamically support namespaces
 static void
 _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
 {
+  //TODO:  Clean this horrible mess up!
+  if  (xmlStrcmp(cur->name, (const xmlChar *)"feed") == 0)
+    _parse_channel_atom(r,doc,cur->xmlChildrenNode);
+  else {
+
   // Channel
   cur = cur->xmlChildrenNode;
   // HACK:  This deals with xml files that have namespaces
@@ -188,17 +286,18 @@ _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur)
   // it is slashdot, and parse the channel info from the child
   // _parse_items should be handling this
   if(cur->ns != NULL) {
-    _parse_channel(r,doc,cur->xmlChildrenNode);
+    _parse_channel_rss(r,doc,cur->xmlChildrenNode);
   }
   else {
     cur = cur->xmlChildrenNode;
-    _parse_channel(r,doc,cur);
+    _parse_channel_rss(r,doc,cur);
   }
   // Now we will populate the feed information
   while (cur != NULL) {
     if  (xmlStrcmp(cur->name, (const xmlChar *)"item") == 0)
-      _parse_items(r, doc, cur);
+      _parse_items_rss(r, doc, cur);
     cur=cur->next;
+  }
   }
 }
 
@@ -235,6 +334,7 @@ load_feed(char *url)
   // TODO: Not clean
   rf->first = NULL;
   rf->articles = 0;
+  strncpy(rf->url,url,strlen(url)+1);
   _parse_feed(rf, doc, cur);
 
   if(buffer.memory)
@@ -243,6 +343,42 @@ load_feed(char *url)
     xmlFreeDoc(doc);
 
   return rf;
+}
+
+// TODO:  Refactor w/ load feed
+void
+reload_feed(rss_feed_t *rf)
+{
+  xmlDocPtr doc;
+  xmlNodePtr cur;
+  struct MemoryStruct buffer;
+
+  // Free old articles
+  if (rf->first != NULL)
+    _free_items(rf);
+
+  buffer = _load_url(rf->url);
+  doc = xmlReadMemory(buffer.memory, buffer.size, "noname.xml",NULL,0);
+  if (doc == NULL) {
+    fprintf(stderr,"Unable to parse xml from %s\n",rf->url);
+  }
+
+  cur = xmlDocGetRootElement(doc);
+
+  if (cur == NULL) {
+    fprintf(stderr,"empty document\n");
+    xmlFreeDoc(doc);
+  }
+
+  // TODO: Not clean
+  rf->first = NULL;
+  rf->articles = 0;
+  _parse_feed(rf, doc, cur);
+
+  if(buffer.memory)
+    free(buffer.memory);
+  if(doc)
+    xmlFreeDoc(doc);
 }
 
 // public function to print an rss feed
@@ -255,6 +391,7 @@ print_feed(rss_feed_t *r)
   printf("Title: %s\n", r->title);
   printf("Link: %s\n", r->link);
   printf("Description: %s\n", r->desc);
+  printf("Publication Date: %s\n", r->pubdate);
   printf("------------------------------------------------------------------------------\n");
   ri = r->first;
   while(ri != NULL) {

@@ -3,3 +3,4 @@ http://www.reddit.com/r/programming/.rss
 http://news.ycombinator.com/rss
 http://rss.slashdot.org/Slashdot/slashdot
 http://feeds.feedburner.com/thechangelog?format=xml
+http://stackoverflow.com/feeds/tag?tagnames=c&sort=newest

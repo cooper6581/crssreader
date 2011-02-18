@@ -36,6 +36,9 @@ add_feed(char *url)
   rss_window_t *rw;
   rss_feed_t *rf;
 
+  char msg[rv.x_par];
+  snprintf(msg,rv.x_par,"Loading: %s",url);
+  draw_status(msg);
   rf = load_feed(url);
 
   // setup our rss window
@@ -73,14 +76,6 @@ cleanup_view(void)
   }
 }
 
-// This should be redesigned to not take rss_view
-// but to take rss_window.  rss_view should be
-// static and global somewhere, as there will only
-// ever be 1 rss_view.
-//
-// Note to self:  Since the rss windows will be a linked
-// list, I should have a current pointer to make things
-// cleaner for this function
 void
 draw_articles(void)
 {
@@ -129,12 +124,36 @@ _pad_message(const char *msg)
 }
 
 void
+reload(void)
+{
+  rss_feed_t *rf = NULL;
+  rss_window_t *rw = NULL;
+  rw = get_current_rss_window();
+  rf = rw->r;
+  draw_status("reloading");
+  reload_feed(rf);
+  draw_articles();
+}
+
+
+void
 draw_status(const char *msg)
 {
+  rss_feed_t *rf = NULL;
+  rss_window_t *rw = NULL;
+  char status[rv.x_par];
   char *test_message;
+
   wclear(rv.w_par);
   wattron(rv.w_par,A_REVERSE);
-  test_message = _pad_message("Testing!");
+  if(msg != NULL)
+    sprintf(status,"(%s)",msg);
+  else {
+    rw = get_current_rss_window();
+    rf = rw->r;
+    sprintf(status,"[%d/%d] %s",rv.windex+1,rv.w_amount,rf->title);
+  }
+  test_message = _pad_message(status);
   mvwaddstr(rv.w_par,rv.y_par-1,0,test_message);
   wattroff(rv.w_par,A_REVERSE);
   refresh();

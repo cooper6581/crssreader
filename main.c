@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <locale.h>
 #include "curses.h"
 #include "rss.h"
 #include "window.h"
@@ -12,6 +13,7 @@ int main(int argc, char **argv) {
   struct entry *e;
 
   assert(argc == 2);
+  setlocale(LC_ALL, "");
   et = load_entries(argv[1]);
   e = et->head;
 
@@ -31,6 +33,10 @@ int main(int argc, char **argv) {
     rv.c = getch();
     if(rv.c == 'q')
       break;
+    else if (rv.c == 'r') {
+      reload();
+      draw_articles();
+    }
     else if (rv.c == 'j') {
       rv.cursor += 1;
       draw_articles();
