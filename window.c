@@ -5,13 +5,14 @@
 
 #define PADLINES 128
 
+//prototypes
+static char * _pad_message(const char *msg);
+
 // globals for window
 rss_view_t rv;
 
 // This file contains public and private functions for the GUI
-int
-init_view(void)
-{
+int init_view(void) {
   rv.rw_first = NULL;
   rv.cursor = 0;
   rv.windex = 0;
@@ -30,9 +31,7 @@ init_view(void)
   return 14;
 }
 
-int
-add_feed(char *url)
-{
+int add_feed(char *url) {
   rss_window_t *rw;
   rss_feed_t *rf;
 
@@ -59,13 +58,13 @@ add_feed(char *url)
   return 0;
 }
 
-void
-cleanup_view(void)
-{
+void cleanup_view(void) {
   rss_window_t *rw;
   rss_window_t *temp;
   rw = rv.rw_first;
+#ifdef DEBUG
   int w = 0;
+#endif
   for(rw = rv.rw_first; rw != NULL; rw=temp) {
     temp = rw->next;
     free_feed(rw->r);
@@ -76,29 +75,44 @@ cleanup_view(void)
   }
 }
 
-void
-draw_articles(void)
-{
+void draw_articles(void) {
   rss_item_t *ri = NULL;
   rss_window_t *rw = NULL;
 
   rw = get_current_rss_window();
   werase(rv.w_articles);
   if (rv.cursor < 0)
-    rv.cursor = rw->r->articles;
-  if (rv.cursor >= rw->r->articles)
     rv.cursor = 0;
+    //rv.cursor = rw->r->articles;
+  if (rv.cursor >= rw->r->articles)
+    rv.cursor = rw->r->articles-1;
 
   ri = rw->r->first;
   for(int i = 0;ri != NULL;i++,ri=ri->next) {
-    if (i == rv.cursor) {
-      wattron(rv.w_articles,A_REVERSE);
-      mvwaddstr(rv.w_articles,i,0,ri->title);
-      wattroff(rv.w_articles,A_REVERSE);
+    // TODO: Make this a function
+    if(strlen(ri->title) < rv.x_par) {
+      if (i == rv.cursor) {
+        wattron(rv.w_articles,A_REVERSE);
+        mvwaddstr(rv.w_articles,i,0,ri->title);
+        wattroff(rv.w_articles,A_REVERSE);
+      }
+      else
+        mvwaddstr(rv.w_articles,i,0,ri->title);
+    } else {
+      char title[rv.x_par];
+      strncpy(title,ri->title,rv.x_par-1);
+      title[rv.x_par-1] = '>';
+      title[rv.x_par] = '\0';
+      if (i == rv.cursor) {
+        wattron(rv.w_articles,A_REVERSE);
+        mvwaddstr(rv.w_articles,i,0,title);
+        wattroff(rv.w_articles,A_REVERSE);
+      }
+      else
+        mvwaddstr(rv.w_articles,i,0,title);
     }
-    else
-    mvwaddstr(rv.w_articles,i,0,ri->title);
   }
+
   draw_status(NULL);
   if (rw->r->articles > rv.y_par-2 && 
       rv.cursor > rv.y_par-2)
@@ -108,9 +122,7 @@ draw_articles(void)
     prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
 }
 
-static char *
-_pad_message(const char *msg)
-{
+static char * _pad_message(const char *msg) {
   char *padded = NULL;
   int size_of_msg = 0;
   padded = malloc(sizeof(char) * rv.x_par);
@@ -123,22 +135,20 @@ _pad_message(const char *msg)
   return padded;
 }
 
-void
-reload(void)
-{
+void reload(void) {
+  char tmp_message[rv.x_par];
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
   rw = get_current_rss_window();
   rf = rw->r;
-  draw_status("reloading");
+  snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
+  draw_status(tmp_message);
   reload_feed(rf);
   draw_articles();
 }
 
 
-void
-draw_status(const char *msg)
-{
+void draw_status(const char *msg) {
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
   char status[rv.x_par];
@@ -161,9 +171,7 @@ draw_status(const char *msg)
     free(test_message);
 }
 
-void
-select_article()
-{
+void select_article(void) {
   rss_window_t *rw;
 
   rw = get_current_rss_window();
@@ -177,20 +185,32 @@ select_article()
   system(command);
 }
 
-void
-debug_msg(const char *msg)
-{
+void debug_msg(const char *msg) {
     werase(rv.w_articles);
     mvwaddstr(rv.w_articles,0,0,msg);
     prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
 }
 
-rss_window_t *
-get_current_rss_window(void)
-{
+rss_window_t * get_current_rss_window(void) {
   rss_window_t *rw = NULL;
   rw = rv.rw_first;
   for(int i = 0; i < rv.windex && rw != NULL;i++)
     rw = rw->next;
   return rw;
+}
+
+void yank(void) {
+  rss_window_t *rw;
+
+  rw = get_current_rss_window();
+  char command[1024];
+  rss_item_t *ri = NULL;
+  ri = get_item(rw->r,rv.cursor);
+#ifdef OSX
+  snprintf(command,1024,"echo \"%s\" | pbcopy",ri->link);
+  system(command);
+#endif
+#ifdef LINUX
+  draw_status("Not implemented");
+#endif
 }

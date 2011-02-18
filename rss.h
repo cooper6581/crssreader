@@ -27,10 +27,11 @@ struct MemoryStruct {
   size_t size;
 };
 
+// public accessable prototypes
 rss_feed_t * load_feed(char *url);
+rss_item_t * get_item(rss_feed_t *rf, int index);
 void print_feed(rss_feed_t *rf);
 void free_feed(rss_feed_t *rf);
-rss_item_t * get_item(rss_feed_t *rf, int index);
 void reload_feed(rss_feed_t *rf);
 
 #endif

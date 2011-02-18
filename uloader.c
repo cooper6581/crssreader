@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include "uloader.h"
 
-static struct entries *
-parse_file(char *b, int fsize)
-{
+static struct entries * parse_file(char *b, int fsize) {
   struct entries *e = NULL;
 
   e = malloc(sizeof(struct entries));
@@ -37,9 +35,7 @@ parse_file(char *b, int fsize)
   return e;
 }
 
-static int
-load_file(const char *file_name, char **b)
-{
+static int load_file(const char *file_name, char **b) {
   FILE *fh;
   size_t fsize;
   char *buffer;
@@ -59,9 +55,7 @@ load_file(const char *file_name, char **b)
 }
 
 // Pop in a file, returns a nice list of urls
-struct entries *
-load_entries(const char *filename)
-{
+struct entries * load_entries(const char *filename) {
   char *buffer;
   int fsize;
   struct entries *et = NULL;
@@ -73,9 +67,7 @@ load_entries(const char *filename)
   return et;
 }
 
-void
-free_entries(struct entries *et)
-{
+void free_entries(struct entries *et) {
   struct entry *e;
   struct entry *temp;
   e = et->head;
