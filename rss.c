@@ -287,14 +287,23 @@ static void _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
 }
 
 // public function, returns an rss feed item
-rss_feed_t * load_feed(char *url) {
+// reload arg will determine if the feed needs to simply
+// be loaded, or if it needs to be reloaded
+rss_feed_t * load_feed(char *url, int reload, rss_feed_t *feed) {
   rss_feed_t *rf = NULL;
   xmlDocPtr doc;
   xmlNodePtr cur;
   struct MemoryStruct buffer;
 
+  if (reload == TRUE) {
+    // Free old articles
+    rf = feed;
+    _free_items(rf);
   // Here we are going to load the url into memory
-  buffer = _load_url(url);
+    buffer = _load_url(rf->url);
+  } else
+    buffer = _load_url(url);
+
   // do xml parsing
   doc = xmlReadMemory(buffer.memory,buffer.size,"noname.xml",NULL,0);
   if (doc == NULL) {
@@ -310,14 +319,15 @@ rss_feed_t * load_feed(char *url) {
     return NULL;
   }
 
-  rf = malloc(sizeof(rss_feed_t));
-
-  assert(rf != NULL);
+  if (reload == FALSE) {
+    rf = malloc(sizeof(rss_feed_t));
+    assert(rf != NULL);
+    strncpy(rf->url,url,strlen(url)+1);
+  }
 
   // TODO: Not clean
   rf->first = NULL;
   rf->articles = 0;
-  strncpy(rf->url,url,strlen(url)+1);
   _parse_feed(rf, doc, cur);
 
   if(buffer.memory)
@@ -326,40 +336,6 @@ rss_feed_t * load_feed(char *url) {
     xmlFreeDoc(doc);
 
   return rf;
-}
-
-// TODO:  Refactor w/ load feed
-void reload_feed(rss_feed_t *rf) {
-  xmlDocPtr doc;
-  xmlNodePtr cur;
-  struct MemoryStruct buffer;
-
-  // Free old articles
-  if (rf->first != NULL)
-    _free_items(rf);
-
-  buffer = _load_url(rf->url);
-  doc = xmlReadMemory(buffer.memory, buffer.size, "noname.xml",NULL,0);
-  if (doc == NULL) {
-    fprintf(stderr,"Unable to parse xml from %s\n",rf->url);
-  }
-
-  cur = xmlDocGetRootElement(doc);
-
-  if (cur == NULL) {
-    fprintf(stderr,"empty document\n");
-    xmlFreeDoc(doc);
-  }
-
-  // TODO: Not clean
-  rf->first = NULL;
-  rf->articles = 0;
-  _parse_feed(rf, doc, cur);
-
-  if(buffer.memory)
-    free(buffer.memory);
-  if(doc)
-    xmlFreeDoc(doc);
 }
 
 // public function to print an rss feed
@@ -383,6 +359,7 @@ void print_feed(rss_feed_t *r) {
 void free_feed(rss_feed_t *rf) {
   if(rf->first != NULL)
     _free_items(rf);
+  free(rf);
 }
 
 rss_item_t * get_item(rss_feed_t *rf, int index) {

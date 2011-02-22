@@ -10,7 +10,10 @@ typedef struct rss_window {
   rss_feed_t *r;
   struct rss_window *next;
   int cursor;
-  char *updated;
+  char updated[6];
+  // used for thread to make sure we don't try and free
+  // the linked list while it's being populated
+  int is_updating;
 } rss_window_t;
 
 // encapsulates the main window and article display
@@ -42,7 +45,7 @@ void cleanup_view(void);
 void draw_status(const char *msg);
 void select_article(void);
 void debug_msg(const char *msg);
-void reload(void);
+void *reload(void *t);
 void yank(void);
 rss_window_t * get_current_rss_window(void);
 

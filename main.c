@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <locale.h>
+#include <pthread.h>
 #include "curses.h"
 #include "rss.h"
 #include "window.h"
@@ -11,6 +12,7 @@ extern rss_view_t rv;
 int main(int argc, char **argv) {
   struct entries *et;
   struct entry *e;
+  pthread_t rthread;
 
   assert(argc == 2);
   setlocale(LC_ALL, "");
@@ -23,6 +25,8 @@ int main(int argc, char **argv) {
     add_feed(e->url);
     e = e->next;
   }
+  free_entries(et);
+  free(et);
 
   draw_articles();
   refresh();
@@ -36,8 +40,8 @@ int main(int argc, char **argv) {
       break;
     // reload
     else if (rv.c == 'r') {
-      reload();
-      draw_articles();
+      pthread_create(&rthread, NULL, reload,NULL);
+      pthread_detach(rthread);
     // go down article
     } else if (rv.c == 'j') {
       rv.cursor += 1;

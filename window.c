@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <pthread.h>
 
 #define PADLINES 128
 
@@ -34,17 +36,24 @@ int init_view(void) {
 int add_feed(char *url) {
   rss_window_t *rw;
   rss_feed_t *rf;
+  time_t rawtime;
+  struct tm * timeinfo;
 
   char msg[rv.x_par];
   snprintf(msg,rv.x_par,"Loading: %s",url);
   draw_status(msg);
-  rf = load_feed(url);
+  rf = load_feed(url,0,NULL);
 
   // setup our rss window
   rw = malloc(sizeof(rss_window_t));
   rw->cursor = 0;
   rw->r = rf;
   rw->next = NULL;
+
+  // Add time time
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+  strftime(rw->updated,6,"%H:%M",timeinfo);
 
   // add the rss window
   rv.w_amount++;
@@ -72,6 +81,7 @@ void cleanup_view(void) {
     printf("Freeing window %d\n",w++);
 #endif
     free(rw);
+    rw=temp;
   }
 }
 
@@ -135,16 +145,29 @@ static char * _pad_message(const char *msg) {
   return padded;
 }
 
-void reload(void) {
+void *reload(void *thread_id) {
+  time_t rawtime;
+  struct tm * timeinfo;
   char tmp_message[rv.x_par];
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
+
   rw = get_current_rss_window();
+  // make sure that there isn't another thread messing with rw
+  if (rw->is_updating == TRUE)
+    pthread_exit(NULL);
+  rw->is_updating = TRUE;
   rf = rw->r;
   snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
   draw_status(tmp_message);
-  reload_feed(rf);
+  load_feed(NULL,1,rf);
+  // set the updated time of the window
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+  strftime(rw->updated,6,"%H:%M",timeinfo);
   draw_articles();
+  rw->is_updating = FALSE;
+  pthread_exit(NULL);
 }
 
 
@@ -161,7 +184,7 @@ void draw_status(const char *msg) {
   else {
     rw = get_current_rss_window();
     rf = rw->r;
-    sprintf(status,"[%d/%d] %s",rv.windex+1,rv.w_amount,rf->title);
+    sprintf(status,"[%d/%d] %s - %s",rv.windex+1,rv.w_amount,rf->title,rw->updated);
   }
   test_message = _pad_message(status);
   mvwaddstr(rv.w_par,rv.y_par-1,0,test_message);

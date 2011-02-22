@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 #define CHARMAX 1024
+#define TRUE 1
+#define FALSE 0
 
 typedef struct rss_item {
   char title[CHARMAX];
@@ -28,10 +30,9 @@ struct MemoryStruct {
 };
 
 // public accessable prototypes
-rss_feed_t * load_feed(char *url);
+rss_feed_t * load_feed(char *url, int reload, rss_feed_t *feed);
 rss_item_t * get_item(rss_feed_t *rf, int index);
 void print_feed(rss_feed_t *rf);
 void free_feed(rss_feed_t *rf);
-void reload_feed(rss_feed_t *rf);
 
 #endif
