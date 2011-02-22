@@ -1,13 +1,44 @@
 #include <assert.h>
 #include <locale.h>
 #include <pthread.h>
+#include <time.h>
 #include "curses.h"
 #include "rss.h"
 #include "window.h"
 #include "uloader.h"
 
+#define AUTOREFRESH 120
+
+// this is just a proof of concept
+void check_time(void);
+
 // our global rss_view
 extern rss_view_t rv;
+
+// globals for the poc
+time_t start_time;
+time_t temp_time;
+time_t timer;
+
+void check_time(void) {
+  time_t current_time;
+  current_time = time(NULL);
+  if (current_time > temp_time) {
+    timer--;
+    temp_time = current_time;
+    if (timer == 0) {
+      timer = AUTOREFRESH;
+      // Ghetto, just a POC
+      pthread_t threads[rv.w_amount];
+      for(int i=0;i<rv.w_amount;i++) {
+        pthread_create(&threads[i], NULL, reload_all,&i);
+        pthread_detach(threads[i]);
+      }
+      wclear(rv.w_articles);
+      draw_articles();
+    }
+  }
+}
 
 int main(int argc, char **argv) {
   struct entries *et;
@@ -28,6 +59,11 @@ int main(int argc, char **argv) {
   free_entries(et);
   free(et);
 
+  //timer stuff
+  timer = AUTOREFRESH;
+  start_time = time(NULL);
+  temp_time = start_time;
+
   draw_articles();
   refresh();
   prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
@@ -35,6 +71,7 @@ int main(int argc, char **argv) {
   // Main loop
   for(;;) {
     rv.c = getch();
+    check_time();
     // quit
     if(rv.c == 'q')
       break;
@@ -42,6 +79,16 @@ int main(int argc, char **argv) {
     else if (rv.c == 'r') {
       pthread_create(&rthread, NULL, reload,NULL);
       pthread_detach(rthread);
+    // reload all
+    } else if (rv.c == 'R') {
+      // create an array of threads
+      pthread_t threads[rv.w_amount];
+      for(int i=0;i<rv.w_amount;i++) {
+        pthread_create(&threads[i], NULL, reload_all,&i);
+        pthread_detach(threads[i]);
+      }
+      wclear(rv.w_articles);
+      draw_articles();
     // go down article
     } else if (rv.c == 'j') {
       rv.cursor += 1;

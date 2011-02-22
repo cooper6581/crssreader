@@ -23,6 +23,7 @@ int init_view(void) {
   assert(rv.w_par != NULL);
   raw();
   noecho();
+  halfdelay(10);
   use_default_colors();
   // This will probably fail in OSX
   curs_set(0);
@@ -145,7 +146,7 @@ static char * _pad_message(const char *msg) {
   return padded;
 }
 
-void *reload(void *thread_id) {
+void * reload(void *thread_id) {
   time_t rawtime;
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
@@ -166,10 +167,42 @@ void *reload(void *thread_id) {
   timeinfo = localtime(&rawtime);
   strftime(rw->updated,6,"%H:%M",timeinfo);
   draw_articles();
+  snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
+  draw_status(tmp_message);
   rw->is_updating = FALSE;
   pthread_exit(NULL);
 }
 
+void * reload_all(void *t) {
+  time_t rawtime;
+  struct tm * timeinfo;
+  char tmp_message[rv.x_par];
+  rss_feed_t *rf = NULL;
+  rss_window_t *rw = NULL;
+  rss_window_t *crw = NULL;
+  int blah = *(int *)t;
+
+  rw = get_rss_window_at_index(blah);
+  crw = get_current_rss_window();
+  // make sure that there isn't another thread messing with rw
+  if (rw->is_updating == TRUE)
+    pthread_exit(NULL);
+  rw->is_updating = TRUE;
+  rf = rw->r;
+  snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
+  draw_status(tmp_message);
+  load_feed(NULL,1,rf);
+  // set the updated time of the window
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+  strftime(rw->updated,6,"%H:%M",timeinfo);
+  if(crw == rw)
+    draw_articles();
+  snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
+  draw_status(tmp_message);
+  rw->is_updating = FALSE;
+  pthread_exit(NULL);
+}
 
 void draw_status(const char *msg) {
   rss_feed_t *rf = NULL;
@@ -177,7 +210,7 @@ void draw_status(const char *msg) {
   char status[rv.x_par];
   char *test_message;
 
-  wclear(rv.w_par);
+  //wclear(rv.w_par);
   wattron(rv.w_par,A_REVERSE);
   if(msg != NULL)
     sprintf(status,"(%s)",msg);
@@ -218,6 +251,14 @@ rss_window_t * get_current_rss_window(void) {
   rss_window_t *rw = NULL;
   rw = rv.rw_first;
   for(int i = 0; i < rv.windex && rw != NULL;i++)
+    rw = rw->next;
+  return rw;
+}
+
+rss_window_t * get_rss_window_at_index(int index) {
+  rss_window_t *rw = NULL;
+  rw = rv.rw_first;
+  for(int i = 0; i != index; i++)
     rw = rw->next;
   return rw;
 }

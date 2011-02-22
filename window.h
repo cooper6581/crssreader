@@ -46,7 +46,9 @@ void draw_status(const char *msg);
 void select_article(void);
 void debug_msg(const char *msg);
 void *reload(void *t);
+void *reload_all(void *t);
 void yank(void);
 rss_window_t * get_current_rss_window(void);
+rss_window_t * get_rss_window_at_index(int index);
 
 #endif
