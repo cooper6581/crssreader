@@ -192,6 +192,7 @@ void * reload(void *t) {
   snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
   draw_status(tmp_message);
   // drawing needs to be done while the mutex is locked
+  rv.need_redraw = TRUE;
   pthread_exit(NULL);
 }
 
@@ -220,6 +221,7 @@ void * reload_all(void *t) {
     snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
     draw_status(tmp_message);
   }
+  rv.need_redraw = TRUE;
   pthread_exit(NULL);
 }
 

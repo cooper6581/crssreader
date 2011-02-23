@@ -40,6 +40,9 @@ int main(int argc, char **argv) {
   // Main loop
   for(;;) {
     if(rv.need_redraw == TRUE) {
+      wclear(rv.w_articles);
+      refresh();
+      prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
       draw_articles();
       rv.need_redraw = FALSE;
     }
@@ -63,13 +66,11 @@ int main(int argc, char **argv) {
     } else if (rv.c == 'r') {
       pthread_create(&rthread, NULL, reload,NULL);
       pthread_detach(rthread);
-      rv.need_redraw = TRUE;
     // reload all
     } else if (rv.c == 'R') {
       // create an array of threads
       pthread_create(&rthread, NULL, reload_all,NULL);
       pthread_detach(rthread);
-      rv.need_redraw = TRUE;
     // go down article
     } else if (rv.c == 'j') {
       rv.cursor += 1;
