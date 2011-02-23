@@ -38,6 +38,7 @@ int init_view(void) {
   getmaxyx(rv.w_par, rv.y_par, rv.x_par);
   rv.w_articles = newpad(PADLINES,rv.x_par);
   assert(rv.w_articles != NULL);
+  rv.need_redraw = TRUE;
   // setup our mutex
   pthread_mutex_init(&rmutex,NULL);
 
@@ -186,10 +187,13 @@ void * reload(void *t) {
   // set the updated time of the window
   time(&rawtime);
   timeinfo = localtime(&rawtime);
+  pthread_mutex_lock(&rmutex);
   strftime(rw->updated,6,"%H:%M",timeinfo);
-  draw_articles();
+  pthread_mutex_unlock(&rmutex);
+  //draw_articles();
   snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
   draw_status(tmp_message);
+  // drawing needs to be done while the mutex is locked
   pthread_exit(NULL);
 }
 
@@ -199,7 +203,6 @@ void * reload_all(void *t) {
   char tmp_message[rv.x_par];
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
-  rss_window_t *crw = NULL;
 
   for(int i = 0;i<rv.w_amount;i++) {
     rw = get_rss_window_at_index(i);
@@ -213,14 +216,13 @@ void * reload_all(void *t) {
     // set the updated time of the window
     time(&rawtime);
     timeinfo = localtime(&rawtime);
+    pthread_mutex_lock(&rmutex);
     strftime(rw->updated,6,"%H:%M",timeinfo);
-    crw = get_current_rss_window();
-    if(crw == rw)
-      draw_articles();
+    pthread_mutex_unlock(&rmutex);
     snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
     draw_status(tmp_message);
   }
-    pthread_exit(NULL);
+  pthread_exit(NULL);
 }
 
 void draw_status(const char *msg) {
@@ -301,7 +303,6 @@ void yank(void) {
 void check_time(void) {
   time_t current_time;
   rss_window_t *rw;
-  rss_window_t *crw;
   current_time = time(NULL);
   if (current_time > temp_time) {
     // cycle through all of our rss windows, and dec the timers
@@ -318,11 +319,6 @@ void check_time(void) {
         // it is...
         //pthread_join(thread, NULL);
         pthread_detach(thread);
-        crw = get_current_rss_window();
-        if(crw == rw) {
-          wclear(rv.w_articles);
-          draw_articles();
-        }
       }
     }
   }

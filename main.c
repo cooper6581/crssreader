@@ -6,6 +6,9 @@
 #include "window.h"
 #include "uloader.h"
 
+#define TRUE 1
+#define FALSE 0
+
 // our global rss_view
 extern rss_view_t rv;
 
@@ -36,6 +39,10 @@ int main(int argc, char **argv) {
 
   // Main loop
   for(;;) {
+    if(rv.need_redraw == TRUE) {
+      draw_articles();
+      rv.need_redraw = FALSE;
+    }
     rv.c = getch();
     check_time();
     // quit
@@ -50,54 +57,54 @@ int main(int argc, char **argv) {
       if (hit_g == 2) {
         hit_g = 0;
         rv.cursor = 0;
-        draw_articles();
+        rv.need_redraw = TRUE;
       }
     // reload
     } else if (rv.c == 'r') {
       pthread_create(&rthread, NULL, reload,NULL);
       pthread_detach(rthread);
+      rv.need_redraw = TRUE;
     // reload all
     } else if (rv.c == 'R') {
       // create an array of threads
       pthread_create(&rthread, NULL, reload_all,NULL);
       pthread_detach(rthread);
-      wclear(rv.w_articles);
-      draw_articles();
+      rv.need_redraw = TRUE;
     // go down article
     } else if (rv.c == 'j') {
       rv.cursor += 1;
-      draw_articles();
+      rv.need_redraw = TRUE;
     // page down ctrl+d
     } else if (rv.c == 0x04) {
       rv.cursor += rv.y_par/2;
-      draw_articles();
+      rv.need_redraw = TRUE;
     // go up
     } else if (rv.c == 'k') {
       rv.cursor -= 1;
-      draw_articles();
+      rv.need_redraw = TRUE;
     // page up ctrl+u
     } else if (rv.c == 0x15) {
       rv.cursor -= rv.y_par/2;
-      draw_articles();
+      rv.need_redraw = TRUE;
     // switch window left
     } else if (rv.c == 'H' || rv.c == 'h') {
       if(rv.windex > 0)
         rv.windex -= 1;
       else
         rv.windex = rv.w_amount-1;
-      draw_articles();
+      rv.need_redraw = TRUE;
     // window right
     } else if (rv.c == 'L' || rv.c == 'l') {
       if(rv.windex < rv.w_amount-1)
         rv.windex += 1;
       else
         rv.windex = 0;
-      draw_articles();
+      rv.need_redraw = TRUE;
     // G bottom of the page
     // HACK for now
     } else if (rv.c == 'G') {
       rv.cursor += 9999;
-      draw_articles();
+      rv.need_redraw = TRUE;
     // Copies URL to clipboard
     } else if (rv.c == 'y') {
       yank();

@@ -4,6 +4,9 @@
 #include "rss.h"
 #include "curses.h"
 
+#define TRUE 1
+#define FALSE 0
+
 // struct used to represent data which is displayed in an rss window
 typedef struct rss_window {
   // 1 rss feed per rss_window
@@ -38,6 +41,8 @@ typedef struct rss_view {
   rss_window_t *rw_last;
   // and the amount we have
   int w_amount;
+  // a hopefully clean and cpu friendly way to handle screen redraw
+  int need_redraw;
 } rss_view_t;
 
 int init_view(void);
