@@ -7,7 +7,7 @@
 
 #define PADLINES 128
 // Default to 2 minutes
-#define AUTOREFRESH 30
+#define AUTOREFRESH 120
 
 //globals
 time_t start_time;
@@ -39,6 +39,7 @@ int init_view(void) {
   rv.w_articles = newpad(PADLINES,rv.x_par);
   assert(rv.w_articles != NULL);
   rv.need_redraw = TRUE;
+  rv.is_reloading = FALSE;
   // setup our mutex
   pthread_mutex_init(&rmutex,NULL);
 
@@ -169,6 +170,11 @@ void * reload(void *t) {
   rss_window_t *rw = NULL;
   int window_index = 0;
 
+  if (rv.is_reloading)
+    pthread_exit(NULL);
+
+  rv.is_reloading = TRUE;
+  memset(tmp_message,0,rv.x_par);
   // if t has a value, lets get that rss_window index, if not
   // we will default to current window
   if(t == NULL)
@@ -191,11 +197,12 @@ void * reload(void *t) {
   pthread_mutex_unlock(&rmutex);
   snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
   draw_status(tmp_message);
-  // drawing needs to be done while the mutex is locked
   rv.need_redraw = TRUE;
+  rv.is_reloading = FALSE;
   pthread_exit(NULL);
 }
 
+// This is what runs when you do shift R
 void * reload_all(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
@@ -203,6 +210,11 @@ void * reload_all(void *t) {
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
 
+  if (rv.is_reloading)
+    pthread_exit(NULL);
+
+  rv.is_reloading = TRUE;
+  memset(tmp_message,0,rv.x_par);
   for(int i = 0;i<rv.w_amount;i++) {
     rw = get_rss_window_at_index(i);
     // make sure that there isn't another thread messing with rw
@@ -221,10 +233,12 @@ void * reload_all(void *t) {
     snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
     draw_status(tmp_message);
   }
+  rv.is_reloading = FALSE;
   rv.need_redraw = TRUE;
   pthread_exit(NULL);
 }
 
+// Call back used for auto refreshing rss_windows
 void * auto_refresh(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
@@ -232,12 +246,19 @@ void * auto_refresh(void *t) {
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
 
+  if (rv.is_reloading)
+    pthread_exit(NULL);
+
+  rv.is_reloading = TRUE;
+
+  memset(tmp_message,0,rv.x_par);
   // cycle through each of the rss windows to see which ones
   // have expired timers
   for(int i = 0;i<rv.w_amount;i++) {
     rw = get_rss_window_at_index(i);
+    // If this window has an expired timer, update it!
+    // TODO:  Best practices for mutex locking
     if (rw->timer <= 0) {
-      // make sure that there isn't another thread messing with rw
       rf = rw->r;
       snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
       draw_status(tmp_message);
@@ -253,18 +274,21 @@ void * auto_refresh(void *t) {
       pthread_mutex_unlock(&rmutex);
       snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
       draw_status(tmp_message);
-      rv.need_redraw = TRUE;
     }
   }
+  rv.is_reloading = FALSE;
+  rv.need_redraw = TRUE;
   pthread_exit(NULL);
 }
 
+// Draws the bar at the bottom of the screen
 void draw_status(const char *msg) {
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
   char status[rv.x_par];
   char *test_message;
 
+  memset(status,0,rv.x_par);
   //wclear(rv.w_par);
   wattron(rv.w_par,A_REVERSE);
   if(msg != NULL)
@@ -318,14 +342,16 @@ rss_window_t * get_rss_window_at_index(int index) {
   return rw;
 }
 
+// copies the select item to the clipboard
+// NOTE:  Only OSX is currently supported
 void yank(void) {
   rss_window_t *rw;
 
   rw = get_current_rss_window();
-  char command[1024];
   rss_item_t *ri = NULL;
   ri = get_item(rw->r,rv.cursor);
 #ifdef OSX
+  char command[1024];
   snprintf(command,1024,"echo \"%s\" | pbcopy",ri->link);
   system(command);
 #endif
@@ -334,22 +360,7 @@ void yank(void) {
 #endif
 }
 
-static void _fire_refresh(void) {
-    pthread_t thread;
-    pthread_create(&thread, NULL, auto_refresh, NULL);
-    // need to block for now to see if it's causing my problem
-    // it is...
-    //pthread_join(thread, NULL);
-    pthread_detach(thread);
-}
-
-// yeah, this is an explosion waiting to happen.  The ideal
-// and safest way to do this from what I can tell, would be
-// to found out how many rss_feeds need to be updated at the same time
-// and then cycle through them using 1 thread.  This would require a
-// new cb, which would go through all the feed windows, find the ones
-// that have 0, and update them sequentially (behavoir should be exactly
-// like reload_all).
+// Function used to decrease the timers for each rss_window
 void check_time(void) {
   time_t current_time;
   rss_window_t *rw;
@@ -361,10 +372,16 @@ void check_time(void) {
       rw = get_rss_window_at_index(i);
       rw->timer--;
       temp_time = current_time;
+      // lets make note if one of the timers has expired
       if(rw->timer == 0)
         a_timer_is_hit = TRUE;
     }
   }
-  if(a_timer_is_hit)
-    _fire_refresh();
+  // There is at least one timer that has expired.  Fire off a thread
+  // using the auto_refresh callback
+  if(a_timer_is_hit) {
+    pthread_t thread;
+    pthread_create(&thread, NULL, auto_refresh, NULL);
+    pthread_detach(thread);
+  }
 }

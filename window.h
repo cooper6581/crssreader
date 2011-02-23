@@ -43,6 +43,8 @@ typedef struct rss_view {
   int w_amount;
   // a hopefully clean and cpu friendly way to handle screen redraw
   int need_redraw;
+  // if I end up needing more status states, this will need to be an ENUM
+  int is_reloading;
 } rss_view_t;
 
 int init_view(void);
