@@ -1,8 +1,6 @@
 http://www.reddit.com/r/learnprogramming/.rss
 http://www.reddit.com/r/programming/.rss
-http://www.reddit.com/r/C_Programming/.rss
 http://www.reddit.com/r/Python/.rss
-http://www.reddit.com/r/Cplusplus/.rss
 http://news.ycombinator.com/rss
 http://rss.slashdot.org/Slashdot/slashdot
 http://feeds.feedburner.com/thechangelog?format=xml
