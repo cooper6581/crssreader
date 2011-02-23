@@ -82,11 +82,8 @@ int main(int argc, char **argv) {
     // reload all
     } else if (rv.c == 'R') {
       // create an array of threads
-      pthread_t threads[rv.w_amount];
-      for(int i=0;i<rv.w_amount;i++) {
-        pthread_create(&threads[i], NULL, reload_all,&i);
-        pthread_detach(threads[i]);
-      }
+      pthread_create(&rthread, NULL, reload_all,NULL);
+      pthread_detach(rthread);
       wclear(rv.w_articles);
       draw_articles();
     // go down article

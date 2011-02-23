@@ -180,28 +180,29 @@ void * reload_all(void *t) {
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
   rss_window_t *crw = NULL;
-  int blah = *(int *)t;
 
-  rw = get_rss_window_at_index(blah);
-  crw = get_current_rss_window();
-  // make sure that there isn't another thread messing with rw
-  if (rw->is_updating == TRUE)
+  for(int i = 0;i<rv.w_amount;i++) {
+    rw = get_rss_window_at_index(i);
+    crw = get_current_rss_window();
+    // make sure that there isn't another thread messing with rw
+    if (rw->is_updating == TRUE)
+      pthread_exit(NULL);
+    rw->is_updating = TRUE;
+    rf = rw->r;
+    snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
+    draw_status(tmp_message);
+    load_feed(NULL,1,rf);
+    // set the updated time of the window
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(rw->updated,6,"%H:%M",timeinfo);
+    if(crw == rw)
+      draw_articles();
+    snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
+    draw_status(tmp_message);
+    rw->is_updating = FALSE;
+  }
     pthread_exit(NULL);
-  rw->is_updating = TRUE;
-  rf = rw->r;
-  snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
-  draw_status(tmp_message);
-  load_feed(NULL,1,rf);
-  // set the updated time of the window
-  time(&rawtime);
-  timeinfo = localtime(&rawtime);
-  strftime(rw->updated,6,"%H:%M",timeinfo);
-  if(crw == rw)
-    draw_articles();
-  snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
-  draw_status(tmp_message);
-  rw->is_updating = FALSE;
-  pthread_exit(NULL);
 }
 
 void draw_status(const char *msg) {
