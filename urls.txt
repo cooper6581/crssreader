@@ -4,4 +4,3 @@ http://news.ycombinator.com/rss
 http://rss.slashdot.org/Slashdot/slashdot
 http://feeds.feedburner.com/thechangelog?format=xml
 http://stackoverflow.com/feeds/tag?tagnames=c&sort=newest
-http://news.google.fr/news?pz=1&cf=all&ned=fr&hl=fr&output=rss

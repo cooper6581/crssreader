@@ -110,7 +110,6 @@ void draw_articles(void) {
   werase(rv.w_articles);
   if (rv.cursor < 0)
     rv.cursor = 0;
-    //rv.cursor = rw->r->articles;
   if (rv.cursor >= rw->r->articles)
     rv.cursor = rw->r->articles-1;
 
@@ -190,7 +189,6 @@ void * reload(void *t) {
   pthread_mutex_lock(&rmutex);
   strftime(rw->updated,6,"%H:%M",timeinfo);
   pthread_mutex_unlock(&rmutex);
-  //draw_articles();
   snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
   draw_status(tmp_message);
   // drawing needs to be done while the mutex is locked
