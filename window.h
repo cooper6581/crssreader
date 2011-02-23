@@ -54,6 +54,7 @@ void select_article(void);
 void debug_msg(const char *msg);
 void *reload(void *t);
 void *reload_all(void *t);
+void *auto_refresh(void *t);
 void yank(void);
 void check_time(void);
 rss_window_t * get_current_rss_window(void);

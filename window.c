@@ -7,7 +7,7 @@
 
 #define PADLINES 128
 // Default to 2 minutes
-#define AUTOREFRESH 120
+#define AUTOREFRESH 30
 
 //globals
 time_t start_time;
@@ -225,6 +225,40 @@ void * reload_all(void *t) {
   pthread_exit(NULL);
 }
 
+void * auto_refresh(void *t) {
+  time_t rawtime;
+  struct tm * timeinfo;
+  char tmp_message[rv.x_par];
+  rss_feed_t *rf = NULL;
+  rss_window_t *rw = NULL;
+
+  // cycle through each of the rss windows to see which ones
+  // have expired timers
+  for(int i = 0;i<rv.w_amount;i++) {
+    rw = get_rss_window_at_index(i);
+    if (rw->timer <= 0) {
+      // make sure that there isn't another thread messing with rw
+      rf = rw->r;
+      snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
+      draw_status(tmp_message);
+      pthread_mutex_lock(&rmutex);
+      load_feed(NULL,1,rf);
+      pthread_mutex_unlock(&rmutex);
+      // set the updated time of the window
+      time(&rawtime);
+      timeinfo = localtime(&rawtime);
+      pthread_mutex_lock(&rmutex);
+      strftime(rw->updated,6,"%H:%M",timeinfo);
+      rw->timer = rw->auto_refresh;
+      pthread_mutex_unlock(&rmutex);
+      snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
+      draw_status(tmp_message);
+      rv.need_redraw = TRUE;
+    }
+  }
+  pthread_exit(NULL);
+}
+
 void draw_status(const char *msg) {
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
@@ -300,10 +334,19 @@ void yank(void) {
 #endif
 }
 
+static void _fire_refresh(void) {
+    pthread_t thread;
+    pthread_create(&thread, NULL, auto_refresh, NULL);
+    // need to block for now to see if it's causing my problem
+    // it is...
+    //pthread_join(thread, NULL);
+    pthread_detach(thread);
+}
+
 // yeah, this is an explosion waiting to happen.  The ideal
 // and safest way to do this from what I can tell, would be
 // to found out how many rss_feeds need to be updated at the same time
-// and then cycle through them using 1 thread.  This would require a 
+// and then cycle through them using 1 thread.  This would require a
 // new cb, which would go through all the feed windows, find the ones
 // that have 0, and update them sequentially (behavoir should be exactly
 // like reload_all).
@@ -311,22 +354,17 @@ void check_time(void) {
   time_t current_time;
   rss_window_t *rw;
   current_time = time(NULL);
+  int a_timer_is_hit = FALSE;
   if (current_time > temp_time) {
     // cycle through all of our rss windows, and dec the timers
     for(int i = 0; i < rv.w_amount; i++) {
       rw = get_rss_window_at_index(i);
       rw->timer--;
       temp_time = current_time;
-      // if the timer hits 0, fire off a thread to refresh that rss feed
-      if (rw->timer == 0) {
-        rw->timer = rw->auto_refresh;
-        pthread_t thread;
-        pthread_create(&thread, NULL, reload, &i);
-        // need to block for now to see if it's causing my problem
-        // it is...
-        //pthread_join(thread, NULL);
-        pthread_detach(thread);
-      }
+      if(rw->timer == 0)
+        a_timer_is_hit = TRUE;
     }
   }
+  if(a_timer_is_hit)
+    _fire_refresh();
 }
