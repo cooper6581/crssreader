@@ -1,11 +1,28 @@
+dist ?= OSX
+PREFIX=/usr
+TARGET=rssreader
+
+CC=gcc
+CFLAGS=-Wall -std=c99
+LIBS=-l xml2 -l curl
+DBGFLAGS=
+LDFLAGS=-L$(PREFIX)/lib
+INCDIR=-I$(PREFIX)/include -I$(PREFIX)/include/libxml2
+
+ifeq ($(dist), DEBUG)
+	DBGFLAGS+= -g
+else
+	CFLAGS+=-pthread
+endif
+
+ifeq ($(dist), OSX)
+	LIBS+=-l curses
+endif
+ifeq ($(dist), LINUX)
+	LIBS+=-l ncursesw
+endif
+
 all:
-	gcc -D OSX -g -Wall -std=c99 -pthread -I /usr/include/libxml2 -o rssreader rss.c uloader.c window.c main.c -l xml2 -l curl -l curses
-
-linux:
-	gcc -D LINUX -g -Wall -std=c99 -pthread -I /usr/include/libxml2 -o rssreader rss.c uloader.c window.c main.c -l xml2 -l curl -l ncursesw
-
-test:
-	gcc -D DEBUG -g -Wall -std=c99 -I /usr/include/libxml2 -o test_rss rss.c test.c -l xml2 -l curl
-
+	gcc -D $(dist) $(DBGFLAGS) $(CFLAGS) $(INCDIR) -o $(TARGET) rss.c uloader.c window.c main.c $(LDFLAGS) $(LIBS)
 clean:
-	rm -rf rssreader test_rss rssreader.* test_rss.*
+	rm -rf $(TARGET) rssreader.* test_rss.*
