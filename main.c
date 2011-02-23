@@ -68,7 +68,6 @@ int main(int argc, char **argv) {
       pthread_detach(rthread);
     // reload all
     } else if (rv.c == 'R') {
-      // create an array of threads
       pthread_create(&rthread, NULL, reload_all,NULL);
       pthread_detach(rthread);
     // go down article
