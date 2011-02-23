@@ -6,6 +6,14 @@
 #include <pthread.h>
 
 #define PADLINES 128
+// Default to 2 minutes
+#define AUTOREFRESH 120
+
+//globals
+time_t start_time;
+time_t temp_time;
+time_t timer;
+pthread_mutex_t rmutex;
 
 //prototypes
 static char * _pad_message(const char *msg);
@@ -30,10 +38,13 @@ int init_view(void) {
   getmaxyx(rv.w_par, rv.y_par, rv.x_par);
   rv.w_articles = newpad(PADLINES,rv.x_par);
   assert(rv.w_articles != NULL);
+  // setup our mutex
+  pthread_mutex_init(&rmutex,NULL);
 
   return 14;
 }
 
+// TODO: Take autorefresh argument
 int add_feed(char *url) {
   rss_window_t *rw;
   rss_feed_t *rf;
@@ -50,6 +61,8 @@ int add_feed(char *url) {
   rw->cursor = 0;
   rw->r = rf;
   rw->next = NULL;
+  rw->auto_refresh = AUTOREFRESH;
+  rw->timer = rw->auto_refresh;
 
   // Add time time
   time(&rawtime);
@@ -84,6 +97,8 @@ void cleanup_view(void) {
     free(rw);
     rw=temp;
   }
+  // clean up the mutex
+  pthread_mutex_destroy(&rmutex);
 }
 
 void draw_articles(void) {
@@ -146,22 +161,28 @@ static char * _pad_message(const char *msg) {
   return padded;
 }
 
-void * reload(void *thread_id) {
+void * reload(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
+  int window_index = 0;
 
-  rw = get_current_rss_window();
-  // make sure that there isn't another thread messing with rw
-  if (rw->is_updating == TRUE)
-    pthread_exit(NULL);
-  rw->is_updating = TRUE;
+  // if t has a value, lets get that rss_window index, if not
+  // we will default to current window
+  if(t == NULL)
+    rw = get_current_rss_window();
+  else {
+    window_index = *(int *)t;
+    rw = get_rss_window_at_index(window_index);
+  }
   rf = rw->r;
   snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
   draw_status(tmp_message);
+  pthread_mutex_lock(&rmutex);
   load_feed(NULL,1,rf);
+  pthread_mutex_unlock(&rmutex);
   // set the updated time of the window
   time(&rawtime);
   timeinfo = localtime(&rawtime);
@@ -169,7 +190,6 @@ void * reload(void *thread_id) {
   draw_articles();
   snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
   draw_status(tmp_message);
-  rw->is_updating = FALSE;
   pthread_exit(NULL);
 }
 
@@ -183,24 +203,22 @@ void * reload_all(void *t) {
 
   for(int i = 0;i<rv.w_amount;i++) {
     rw = get_rss_window_at_index(i);
-    crw = get_current_rss_window();
     // make sure that there isn't another thread messing with rw
-    if (rw->is_updating == TRUE)
-      pthread_exit(NULL);
-    rw->is_updating = TRUE;
     rf = rw->r;
     snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
     draw_status(tmp_message);
+    pthread_mutex_lock(&rmutex);
     load_feed(NULL,1,rf);
+    pthread_mutex_unlock(&rmutex);
     // set the updated time of the window
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     strftime(rw->updated,6,"%H:%M",timeinfo);
+    crw = get_current_rss_window();
     if(crw == rw)
       draw_articles();
     snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
     draw_status(tmp_message);
-    rw->is_updating = FALSE;
   }
     pthread_exit(NULL);
 }
@@ -278,4 +296,34 @@ void yank(void) {
 #ifdef LINUX
   draw_status("Not implemented");
 #endif
+}
+
+void check_time(void) {
+  time_t current_time;
+  rss_window_t *rw;
+  rss_window_t *crw;
+  current_time = time(NULL);
+  if (current_time > temp_time) {
+    // cycle through all of our rss windows, and dec the timers
+    for(int i = 0; i < rv.w_amount; i++) {
+      rw = get_rss_window_at_index(i);
+      rw->timer--;
+      temp_time = current_time;
+      // if the timer hits 0, fire off a thread to refresh that rss feed
+      if (rw->timer == 0) {
+        rw->timer = rw->auto_refresh;
+        pthread_t thread;
+        pthread_create(&thread, NULL, reload, &i);
+        // need to block for now to see if it's causing my problem
+        // it is...
+        //pthread_join(thread, NULL);
+        pthread_detach(thread);
+        crw = get_current_rss_window();
+        if(crw == rw) {
+          wclear(rv.w_articles);
+          draw_articles();
+        }
+      }
+    }
+  }
 }

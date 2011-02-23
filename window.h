@@ -11,9 +11,11 @@ typedef struct rss_window {
   struct rss_window *next;
   int cursor;
   char updated[6];
-  // used for thread to make sure we don't try and free
-  // the linked list while it's being populated
-  int is_updating;
+  // this is the auto refresh value for the feed
+  // -1 will mean disabled
+  int auto_refresh;
+  // This is our actual timer
+  int timer;
 } rss_window_t;
 
 // encapsulates the main window and article display
@@ -48,6 +50,7 @@ void debug_msg(const char *msg);
 void *reload(void *t);
 void *reload_all(void *t);
 void yank(void);
+void check_time(void);
 rss_window_t * get_current_rss_window(void);
 rss_window_t * get_rss_window_at_index(int index);
 
