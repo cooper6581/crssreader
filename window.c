@@ -300,6 +300,13 @@ void yank(void) {
 #endif
 }
 
+// yeah, this is an explosion waiting to happen.  The ideal
+// and safest way to do this from what I can tell, would be
+// to found out how many rss_feeds need to be updated at the same time
+// and then cycle through them using 1 thread.  This would require a 
+// new cb, which would go through all the feed windows, find the ones
+// that have 0, and update them sequentially (behavoir should be exactly
+// like reload_all).
 void check_time(void) {
   time_t current_time;
   rss_window_t *rw;
