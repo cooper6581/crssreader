@@ -33,9 +33,10 @@ typedef struct rss_view {
   int y_par;
   // Our window index
   int windex;
-  // Our parent window, and article view window
+  // Our parent window, article view window and titles view window
   WINDOW *w_par;
   WINDOW *w_articles;
+  WINDOW *w_titles;
   // Linked list of rss_windows
   rss_window_t *rw_first;
   rss_window_t *rw_last;
@@ -45,14 +46,18 @@ typedef struct rss_view {
   int need_redraw;
   // if I end up needing more status states, this will need to be an ENUM
   int is_reloading;
+  // are we drawing titles
+  int title_viewing; 
 } rss_view_t;
 
 int init_view(void);
 int add_feed(char *url);
 void draw_articles(void);
+void draw_titles(void);
 void cleanup_view(void);
 void draw_status(const char *msg);
 void select_article(void);
+void select_feed(void);
 void debug_msg(const char *msg);
 void *reload(void *t);
 void *reload_all(void *t);

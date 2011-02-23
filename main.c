@@ -23,7 +23,6 @@ int main(int argc, char **argv) {
   setlocale(LC_ALL, "");
   et = load_entries(argv[1]);
   e = et->head;
-
   assert(init_view());
 
   while(e != NULL) {
@@ -33,19 +32,28 @@ int main(int argc, char **argv) {
   free_entries(et);
   free(et);
 
-  draw_articles();
+  draw_titles();
   refresh();
-  prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
+  prefresh(rv.w_titles, 0, 0, 0, 0, rv.y_par-2, rv.x_par);
 
   // Main loop
   for(;;) {
-    if(rv.need_redraw == TRUE) {
-      wclear(rv.w_articles);
-      refresh();
-      prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
-      draw_articles();
-      rv.need_redraw = FALSE;
-    }
+      if(rv.need_redraw) {
+          if (rv.title_viewing) {
+              wclear(rv.w_titles);
+              refresh();
+              wrefresh(rv.w_titles);
+              draw_titles();
+              rv.need_redraw = FALSE;
+          }
+          else {
+              wclear(rv.w_articles);
+              refresh();
+              wrefresh(rv.w_articles);
+              draw_articles();
+              rv.need_redraw = FALSE;
+          }
+      }
     rv.c = getch();
     check_time();
     // quit
@@ -62,6 +70,9 @@ int main(int argc, char **argv) {
         rv.cursor = 0;
         rv.need_redraw = TRUE;
       }
+    } else if (rv.c == '"') {
+        rv.title_viewing = !rv.title_viewing;
+        rv.need_redraw = TRUE;
     // reload
     } else if (rv.c == 'r') {
       pthread_create(&rthread, NULL, reload,NULL);
@@ -87,14 +98,14 @@ int main(int argc, char **argv) {
       rv.cursor -= rv.y_par/2;
       rv.need_redraw = TRUE;
     // switch window left
-    } else if (rv.c == 'H' || rv.c == 'h') {
+    } else if ((rv.c == 'H' || rv.c == 'h') && !rv.title_viewing) {
       if(rv.windex > 0)
         rv.windex -= 1;
       else
         rv.windex = rv.w_amount-1;
       rv.need_redraw = TRUE;
     // window right
-    } else if (rv.c == 'L' || rv.c == 'l') {
+    } else if ((rv.c == 'L' || rv.c == 'l') && !rv.title_viewing) {
       if(rv.windex < rv.w_amount-1)
         rv.windex += 1;
       else
@@ -109,8 +120,15 @@ int main(int argc, char **argv) {
     } else if (rv.c == 'y') {
       yank();
     // enter
-    } else if (rv.c == '\n')
-     select_article();
+    } else if (rv.c == '\n') {
+        if (rv.title_viewing) {
+            rv.title_viewing = !rv.title_viewing;
+            select_feed();
+            rv.need_redraw = TRUE;
+        }
+        else
+            select_article();
+    }
   }
 
   // cleanup

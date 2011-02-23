@@ -37,9 +37,12 @@ int init_view(void) {
   curs_set(0);
   getmaxyx(rv.w_par, rv.y_par, rv.x_par);
   rv.w_articles = newpad(PADLINES,rv.x_par);
+  rv.w_titles = newpad(PADLINES,rv.x_par);
   assert(rv.w_articles != NULL);
+  assert(rv.w_titles != NULL);
   rv.need_redraw = TRUE;
   rv.is_reloading = FALSE;
+  rv.title_viewing = TRUE;
   // setup our mutex
   pthread_mutex_init(&rmutex,NULL);
 
@@ -109,6 +112,7 @@ void draw_articles(void) {
 
   rw = get_current_rss_window();
   werase(rv.w_articles);
+
   if (rv.cursor < 0)
     rv.cursor = 0;
   if (rv.cursor >= rw->r->articles)
@@ -147,6 +151,41 @@ void draw_articles(void) {
         0,0,0,rv.y_par-2,rv.x_par);
   else
     prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
+}
+
+// show all feed urls along with the window number
+void draw_titles(void) {
+  rss_window_t *rw = NULL;
+
+  werase(rv.w_articles);
+  werase(rv.w_titles);
+  if (rv.cursor < 0)
+      rv.cursor = 0;
+  if (rv.cursor >= rv.w_amount)
+      rv.cursor = rv.w_amount-1;
+  
+  rw = rv.rw_first;
+  for(int i=0; rw != NULL; i++, rw = rw->next) {
+      if (i == rv.cursor) {
+          wattron(rv.w_titles, A_REVERSE);
+          mvwaddstr(rv.w_titles, i, 0, rw->r->title);
+          wattroff(rv.w_titles, A_REVERSE);
+      }
+      else
+          mvwaddstr(rv.w_titles, i, 0, rw->r->title);
+  }
+  
+  draw_status("Feeds Loaded");
+  if (rv.windex > rv.y_par-2 && rv.cursor > rv.y_par-2)
+      prefresh(rv.w_titles, 
+               rv.cursor - rv.y_par + 2, 0,
+               0, 0,
+               rv.y_par-2, rv.x_par);
+  else
+      prefresh(rv.w_titles, 
+               0, 0, 
+               0, 0, 
+               rv.y_par-2, rv.x_par);
 }
 
 static char * _pad_message(const char *msg) {
@@ -318,6 +357,12 @@ void select_article(void) {
   snprintf(command,1024,"xdg-open \"%s\"",ri->link);
 #endif
   system(command);
+}
+
+void select_feed(void) {
+  // the index we want, is where our cursor is
+  // when viewing the titles
+  rv.windex = rv.cursor;
 }
 
 void debug_msg(const char *msg) {
