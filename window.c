@@ -106,9 +106,11 @@ void cleanup_view(void) {
 #ifdef DEBUG
     printf("Freeing window %d\n",w++);
 #endif
-    if(rw->auth) {
-      free(rw->username);
-      free(rw->password);
+    if(rw->auth == TRUE) {
+      if(rw->username != NULL)
+        free(rw->username);
+      if(rw->password != NULL)
+        free(rw->password);
     }
     free(rw);
     rw=temp;
