@@ -308,7 +308,8 @@ void * auto_refresh(void *t) {
     rw = get_rss_window_at_index(i);
     // If this window has an expired timer, update it!
     // TODO:  Best practices for mutex locking
-    if (rw->timer <= 0) {
+    // the check for -1 is to make sure we don't update a disabled feed
+    if (rw->timer <= 0 && rw->timer != -1) {
       rf = rw->r;
       snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
       draw_status(tmp_message);
@@ -426,7 +427,9 @@ void check_time(void) {
     // cycle through all of our rss windows, and dec the timers
     for(int i = 0; i < rv.w_amount; i++) {
       rw = get_rss_window_at_index(i);
-      rw->timer--;
+      // make sure the timer is enabled before dec
+      if(rw->timer != -1)
+        rw->timer--;
       temp_time = current_time;
       // lets make note if one of the timers has expired
       if(rw->timer == 0)

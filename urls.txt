@@ -1,3 +1,10 @@
+# URL File Format
+#
+# This file kind of copies grub.conf.  Think of each url as a title
+# you can explicity disable auto refresh by setting it to -1.
+# Hashes are comments, blank spaces are ignored.  Keys and values
+# can be seperated by any kind of white space that isn't a new line
+
 url http://www.reddit.com/r/learnprogramming/.rss
 refresh 120
 url http://www.reddit.com/r/programming/.rss
@@ -11,7 +18,6 @@ refresh 200
 url http://feeds.feedburner.com/thechangelog?format=xml
 refresh 220
 url http://stackoverflow.com/feeds/tag?tagnames=c&sort=newest
-refresh 220
 url http://news.google.fr/news?pz=1&cf=all&ned=fr&hl=fr&output=rss
 refresh 300
 url http://rss.feedsportal.com/c/808/f/415160/index.rss
