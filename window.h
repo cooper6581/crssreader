@@ -7,6 +7,8 @@
 #define TRUE 1
 #define FALSE 0
 
+#define AUTH_MAX 32
+
 // struct used to represent data which is displayed in an rss window
 typedef struct rss_window {
   // 1 rss feed per rss_window
@@ -19,6 +21,11 @@ typedef struct rss_window {
   int auto_refresh;
   // This is our actual timer
   int timer;
+  // These fields are to support rss feeds that require authentication
+  int auth;
+  char *username;
+  char *password;
+
 } rss_window_t;
 
 // encapsulates the main window and article display
@@ -51,7 +58,7 @@ typedef struct rss_view {
 } rss_view_t;
 
 int init_view(void);
-int add_feed(char *url);
+int add_feed(char *url, const int autorefresh, const int auth, char *username, char *password);
 void draw_articles(void);
 void draw_titles(void);
 void cleanup_view(void);

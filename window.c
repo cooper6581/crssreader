@@ -6,8 +6,6 @@
 #include <pthread.h>
 
 #define PADLINES 128
-// Default to 2 minutes
-#define AUTOREFRESH 120
 
 //globals
 time_t start_time;
@@ -50,7 +48,7 @@ int init_view(void) {
 }
 
 // TODO: Take autorefresh argument
-int add_feed(char *url) {
+int add_feed(char *url, const int autorefresh, const int auth, char *username, char *password) {
   rss_window_t *rw;
   rss_feed_t *rf;
   time_t rawtime;
@@ -59,15 +57,24 @@ int add_feed(char *url) {
   char msg[rv.x_par];
   snprintf(msg,rv.x_par,"Loading: %s",url);
   draw_status(msg);
-  rf = load_feed(url,0,NULL);
+  rf = load_feed(url,0,NULL,auth,username,password);
 
   // setup our rss window
   rw = malloc(sizeof(rss_window_t));
   rw->cursor = 0;
   rw->r = rf;
   rw->next = NULL;
-  rw->auto_refresh = AUTOREFRESH;
+  rw->auto_refresh = autorefresh;
   rw->timer = rw->auto_refresh;
+  rw->auth = auth;
+  rw->username = NULL;
+  rw->password = NULL;
+  if (auth == TRUE) {
+    rw->username = malloc(sizeof(char) * AUTH_MAX);
+    rw->password = malloc(sizeof(char) * AUTH_MAX);
+    strncpy(rw->username,username,AUTH_MAX);
+    strncpy(rw->password,password,AUTH_MAX);
+  }
 
   // Add time time
   time(&rawtime);
@@ -99,6 +106,10 @@ void cleanup_view(void) {
 #ifdef DEBUG
     printf("Freeing window %d\n",w++);
 #endif
+    if(rw->auth) {
+      free(rw->username);
+      free(rw->password);
+    }
     free(rw);
     rw=temp;
   }
@@ -226,7 +237,7 @@ void * reload(void *t) {
   snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
   draw_status(tmp_message);
   pthread_mutex_lock(&rmutex);
-  load_feed(NULL,1,rf);
+  load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
   pthread_mutex_unlock(&rmutex);
   // set the updated time of the window
   time(&rawtime);
@@ -261,7 +272,7 @@ void * reload_all(void *t) {
     snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
     draw_status(tmp_message);
     pthread_mutex_lock(&rmutex);
-    load_feed(NULL,1,rf);
+    load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
     pthread_mutex_unlock(&rmutex);
     // set the updated time of the window
     time(&rawtime);
@@ -302,7 +313,7 @@ void * auto_refresh(void *t) {
       snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
       draw_status(tmp_message);
       pthread_mutex_lock(&rmutex);
-      load_feed(NULL,1,rf);
+      load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
       pthread_mutex_unlock(&rmutex);
       // set the updated time of the window
       time(&rawtime);

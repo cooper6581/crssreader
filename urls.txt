@@ -1,10 +1,23 @@
-http://www.reddit.com/r/learnprogramming/.rss
-http://www.reddit.com/r/programming/.rss
-http://www.reddit.com/r/Python/.rss
-http://news.ycombinator.com/rss
-http://rss.slashdot.org/Slashdot/slashdot
-http://feeds.feedburner.com/thechangelog?format=xml
-http://stackoverflow.com/feeds/tag?tagnames=c&sort=newest
-http://news.google.fr/news?pz=1&cf=all&ned=fr&hl=fr&output=rss
-http://rss.feedsportal.com/c/808/f/415160/index.rss
-http://www.gamekult.com/feeds/test.html
+url http://www.reddit.com/r/learnprogramming/.rss
+refresh 120
+url http://www.reddit.com/r/programming/.rss
+refresh 120
+url http://www.reddit.com/r/Python/.rss
+refresh 120
+url http://news.ycombinator.com/rss
+refresh 180
+url http://rss.slashdot.org/Slashdot/slashdot
+refresh 200
+url http://feeds.feedburner.com/thechangelog?format=xml
+refresh 220
+url http://stackoverflow.com/feeds/tag?tagnames=c&sort=newest
+refresh 220
+url http://news.google.fr/news?pz=1&cf=all&ned=fr&hl=fr&output=rss
+refresh 300
+url http://rss.feedsportal.com/c/808/f/415160/index.rss
+refresh 310
+url http://www.gamekult.com/feeds/test.html
+refresh 810
+url https://mail.google.com/mail/feed/atom
+refresh 500
+auth

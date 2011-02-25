@@ -11,7 +11,7 @@
 
 // prototypes
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data);
-static struct MemoryStruct _load_url(char *url);
+static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password);
 static void _free_items(rss_feed_t *r);
 static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
@@ -42,7 +42,7 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
 // Internal function used to load url to memory
 // TODO:  Have the curl stuff be global so we can use the same
 // handle for the entire duration of the program
-static struct MemoryStruct _load_url(char *url) {
+static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password) {
   CURL *curl_handle;
   struct MemoryStruct chunk;
 
@@ -60,6 +60,13 @@ static struct MemoryStruct _load_url(char *url) {
   /* some servers don't like requests that are made without a user-agent
      field, so we provide one */
   curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+  // Gmail part
+  if(auth == TRUE) {
+    char login[512];
+    snprintf(login,512,"%s:%s",username,password);
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login);
+  }
   /* get it! */
   curl_easy_perform(curl_handle);
   /* cleanup curl stuff */
@@ -289,7 +296,11 @@ static void _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
 // public function, returns an rss feed item
 // reload arg will determine if the feed needs to simply
 // be loaded, or if it needs to be reloaded
-rss_feed_t * load_feed(char *url, int reload, rss_feed_t *feed) {
+rss_feed_t *
+load_feed(char *url, int reload,
+          rss_feed_t *feed, const int auth,
+          const char *username, const char *password)
+{
   rss_feed_t *rf = NULL;
   xmlDocPtr doc;
   xmlNodePtr cur;
@@ -300,9 +311,9 @@ rss_feed_t * load_feed(char *url, int reload, rss_feed_t *feed) {
     rf = feed;
     _free_items(rf);
   // Here we are going to load the url into memory
-    buffer = _load_url(rf->url);
+    buffer = _load_url(rf->url, auth, username, password);
   } else
-    buffer = _load_url(url);
+    buffer = _load_url(url, auth, username, password);
 
   // do xml parsing
   doc = xmlReadMemory(buffer.memory,buffer.size,"noname.xml",NULL,0);

@@ -30,7 +30,7 @@ struct MemoryStruct {
 };
 
 // public accessable prototypes
-rss_feed_t * load_feed(char *url, int reload, rss_feed_t *feed);
+rss_feed_t * load_feed(char *url, int reload, rss_feed_t *feed, const int auth, const char *username, const char *password);
 rss_item_t * get_item(rss_feed_t *rf, int index);
 void print_feed(rss_feed_t *rf);
 void free_feed(rss_feed_t *rf);

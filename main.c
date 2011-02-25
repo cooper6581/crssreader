@@ -26,7 +26,10 @@ int main(int argc, char **argv) {
   assert(init_view());
 
   while(e != NULL) {
-    add_feed(e->url);
+    if(e->auth == TRUE)
+      add_feed(e->url,e->refresh,e->auth,e->username,e->password);
+    else
+      add_feed(e->url,e->refresh,e->auth,NULL,NULL);
     e = e->next;
   }
   free_entries(et);
