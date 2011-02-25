@@ -1,4 +1,5 @@
 dist ?= OSX
+debug ?= 1
 PREFIX=/usr
 TARGET=rssreader
 
@@ -9,7 +10,7 @@ DBGFLAGS=
 LDFLAGS=-L$(PREFIX)/lib
 INCDIR=-I$(PREFIX)/include -I$(PREFIX)/include/libxml2
 
-ifeq ($(dist), DEBUG)
+ifeq ($(debug), 1)
 	DBGFLAGS+= -g
 else
 	CFLAGS+=-pthread
