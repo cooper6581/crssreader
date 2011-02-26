@@ -432,7 +432,8 @@ void check_time(void) {
     for(int i = 0; i < rv.w_amount; i++) {
       rw = get_rss_window_at_index(i);
       // make sure the timer is enabled before dec
-      if(rw->timer != -1)
+      // also make sure we don't accidentaly diable a real timer
+      if(rw->timer != -1 && rw->timer != 0)
         rw->timer--;
       temp_time = current_time;
       // lets make note if one of the timers has expired
