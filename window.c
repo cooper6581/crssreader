@@ -131,6 +131,9 @@ void draw_articles(void) {
   if (rv.cursor >= rw->r->articles)
     rv.cursor = rw->r->articles-1;
 
+  if (rw->r->articles == 0)
+    mvwaddstr(rv.w_articles,0,0,"No feeds available.");
+
   ri = rw->r->first;
   for(int i = 0;ri != NULL;i++,ri=ri->next) {
     // TODO: Make this a function
