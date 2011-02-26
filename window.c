@@ -246,6 +246,7 @@ void * reload(void *t) {
   timeinfo = localtime(&rawtime);
   pthread_mutex_lock(&rmutex);
   strftime(rw->updated,6,"%H:%M",timeinfo);
+  rw->timer = rw->auto_refresh;
   pthread_mutex_unlock(&rmutex);
   snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
   draw_status(tmp_message);
@@ -281,6 +282,7 @@ void * reload_all(void *t) {
     timeinfo = localtime(&rawtime);
     pthread_mutex_lock(&rmutex);
     strftime(rw->updated,6,"%H:%M",timeinfo);
+    rw->timer = rw->auto_refresh;
     pthread_mutex_unlock(&rmutex);
     snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
     draw_status(tmp_message);
