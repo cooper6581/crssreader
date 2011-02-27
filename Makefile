@@ -1,5 +1,6 @@
 dist ?= OSX
 debug ?= 1
+
 PREFIX=/usr
 TARGET=rssreader
 
@@ -13,7 +14,7 @@ INCDIR=-I$(PREFIX)/include -I$(PREFIX)/include/libxml2
 ifeq ($(debug), 1)
 	DBGFLAGS+= -g
 else
-	CFLAGS+=-pthread
+	CFLAGS+=-pthread -D NDEBUG
 endif
 
 ifeq ($(dist), OSX)
