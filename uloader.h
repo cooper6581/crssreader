@@ -5,9 +5,6 @@
 #define LINE_MAX 1024
 #define AUTH_MAX 32
 
-#define TRUE 1
-#define FALSE 0
-
 #define UL_KEY_URL 1
 #define UL_KEY_AUTH 2
 #define UL_KEY_REFRESH 3

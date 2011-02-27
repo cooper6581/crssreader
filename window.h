@@ -4,9 +4,6 @@
 #include "rss.h"
 #include "curses.h"
 
-#define TRUE 1
-#define FALSE 0
-
 #define AUTH_MAX 32
 
 // struct used to represent data which is displayed in an rss window

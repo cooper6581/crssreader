@@ -7,6 +7,7 @@
 #include <libxml/parser.h>
 #include <assert.h>
 
+#include "common.h"
 #include "rss.h"
 
 // prototypes

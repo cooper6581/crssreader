@@ -1,9 +1,11 @@
-#include "window.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+
+#include "common.h"
+#include "window.h"
 
 #define PADLINES 128
 

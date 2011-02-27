@@ -2,9 +2,8 @@
 #define RSS_H
 
 #include <stdlib.h>
+
 #define CHARMAX 1024
-#define TRUE 1
-#define FALSE 0
 
 typedef struct rss_item {
   char title[CHARMAX];
