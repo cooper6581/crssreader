@@ -1,0 +1,45 @@
+.TH rssreaderrc 5 "2011-02-26"
+.LO 1
+.SH NAME
+rssreaderrc \- format of rssreader configuration
+.SH DESCRIPTION
+.IR rssreader (1)
+requires a minimal configuration in order to run.  The user can give a
+configuration file as an argument, or in the most common scenario, rssreader automatically reads a config file from 
+.BR $HOME .
+
+The config file has a syntax inspired by grub.conf. Think of each url as a title. Hashes are comments, and blank spaces are ignored. Keys and values can be separated by any kind of white space that isn't a new line.
+
+The following is a sample of a config file:
+
+.PP
+.RS
+.nf
+url http://www.reddit.com/r/programming/.rss
+refresh 120
+.fi
+.RE
+.PP
+
+In this example, "url" and "refresh" are settings names with the settings following in the same line.
+
+You can also have an attribute called "auth" if there is some authentication required. It should work on any "basic type authentication".
+
+.B url 
+\- used to set a new url feed 
+
+(required)
+
+.B refresh 
+\- sets the refresh rate of the feed 
+
+(optional)
+
+.B auth 
+\- ask user for authentication parameters 
+
+(optional)
+
+.SH "SEE ALSO"
+.B rssreader (1)
+
