@@ -1,16 +1,27 @@
 #include <assert.h>
 #include <locale.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include "curses.h"
 #include "rss.h"
 #include "window.h"
 #include "uloader.h"
+#include "common.h"
 
-#define TRUE 1
-#define FALSE 0
+// config filename
+const char *def_cfg_fname = ".rssreaderrc";
+// rssreader version
+const char *version = "0.0.1";
 
 // our global rss_view
 extern rss_view_t rv;
+
+int help(const char *prog_name) {
+  printf("Usage %s [FILE]\n"
+	 "Try `man %s` for more information.\n", 
+	 prog_name, prog_name);
+  return 2;
+}
 
 int main(int argc, char **argv) {
   struct entries *et;
@@ -19,9 +30,42 @@ int main(int argc, char **argv) {
   // Will be cleaned when the input handler is moved outside of main
   int hit_g = 0;
 
-  assert(argc == 2);
+  assert(argc <= 2);
+  /*
+    The assert is nice when debugging but sucks
+    from a user standpoint. The down side is that we have
+    to check for the arguments too. We disable asserts through
+    the Makefile when debug is disabled (-DNDEBUG). 
+  */
+  if (argc > 2) 
+    return help(argv[0]);
+
   setlocale(LC_ALL, "");
-  et = load_entries(argv[1]);
+  if (argc == 1) {
+    /*
+      TODO: fix this shit. string manipulation like this is so
+      dangerous it makes me want to punch people.
+    */
+    const char *home_path = getenv("HOME");
+    assert(home_path != NULL);
+    if (home_path != NULL) {
+      /* is 64 enough for home folders? Probably not!
+	 (I hate string manipulation in C) 
+      */
+      char tmp_path[64];
+      int sz = snprintf(tmp_path, 64, "%s/%s", home_path, def_cfg_fname);
+      assert(sz < 64);
+      et = load_entries(tmp_path);
+    }
+    else {
+      printf("Could not load %s from the user home folder.\n", def_cfg_fname);
+      return -1;
+    }
+  }
+  else {
+    /* Load from the file passed as argument. */
+    et = load_entries(argv[1]);
+  }
   e = et->head;
   assert(init_view());
 
