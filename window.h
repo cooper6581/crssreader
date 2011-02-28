@@ -51,7 +51,9 @@ typedef struct rss_view {
   // if I end up needing more status states, this will need to be an ENUM
   int is_reloading;
   // are we drawing titles
-  int title_viewing; 
+  int title_viewing;
+  // view stuff to make scrolling more like vi
+  int y_view;
 } rss_view_t;
 
 int init_view(void);

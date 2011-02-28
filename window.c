@@ -36,6 +36,7 @@ int init_view(void) {
   // This will probably fail in OSX
   curs_set(0);
   getmaxyx(rv.w_par, rv.y_par, rv.x_par);
+  rv.y_view = 0;
   rv.w_articles = newpad(PADLINES,rv.x_par);
   rv.w_titles = newpad(PADLINES,rv.x_par);
   assert(rv.w_articles != NULL);
@@ -163,12 +164,12 @@ void draw_articles(void) {
   }
 
   draw_status(NULL);
-  if (rw->r->articles > rv.y_par-2 && 
-      rv.cursor > rv.y_par-2)
-    prefresh(rv.w_articles,rv.cursor - rv.y_par + 2,
-        0,0,0,rv.y_par-2,rv.x_par);
-  else
-    prefresh(rv.w_articles,0,0,0,0,rv.y_par-2,rv.x_par);
+  if(rv.cursor > rv.y_view + rv.y_par-2 && rv.cursor <= rw->r->articles)
+    rv.y_view = rv.cursor - rv.y_par+2;
+  else if (rv.cursor < rv.y_view)
+    rv.y_view = rv.cursor;
+
+  prefresh(rv.w_articles,rv.y_view,0,0,0,rv.y_par-2,rv.x_par);
 }
 
 // show all feed urls along with the window number
@@ -194,16 +195,13 @@ void draw_titles(void) {
   }
   
   draw_status("Feeds Loaded");
-  if (rv.windex > rv.y_par-2 && rv.cursor > rv.y_par-2)
-      prefresh(rv.w_titles, 
-               rv.cursor - rv.y_par + 2, 0,
-               0, 0,
-               rv.y_par-2, rv.x_par);
-  else
-      prefresh(rv.w_titles, 
-               0, 0, 
-               0, 0, 
-               rv.y_par-2, rv.x_par);
+
+  if(rv.cursor > rv.y_view + rv.y_par-2 && rv.cursor <= rv.windex)
+    rv.y_view = rv.cursor - rv.y_par+2;
+  else if (rv.cursor < rv.y_view)
+    rv.y_view = rv.cursor;
+
+  prefresh(rv.w_titles,rv.y_view,0,0,0,rv.y_par-2,rv.x_par);
 }
 
 static char * _pad_message(const char *msg) {
