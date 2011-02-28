@@ -355,17 +355,9 @@ void draw_status(const char *msg) {
   else {
     rw = get_current_rss_window();
     rf = rw->r;
-    sprintf(status,"[%d/%d] %s - %s",rv.windex+1,rv.w_amount,rf->title,rw->updated);
+    sprintf(status,"[%d/%d] %s - %s",rv.cursor+1,rw->r->articles,rf->title,rw->updated);
   }
   test_message = _pad_message(status);
-  // I know, I know, this entire thing needs to be re-written.
-  // Last hack, promise!
-  if(msg == NULL) {
-    char art_msg[8];
-    char *dst = &test_message[rv.x_par-7];
-    sprintf(art_msg,"(%02d/%02d)",rv.cursor+1,rw->r->articles);
-    strncpy(dst,art_msg,8);
-  }
   mvwaddstr(rv.w_par,rv.y_par-1,0,test_message);
   wattroff(rv.w_par,A_REVERSE);
   refresh();
