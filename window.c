@@ -453,3 +453,29 @@ void check_time(void) {
     pthread_detach(thread);
   }
 }
+
+void alert(const char *msg) {
+  WINDOW *w_alert = NULL;
+  WINDOW *w_alert_text = NULL;
+  int length = 0;
+  length = strlen(msg);
+  w_alert = newwin(rv.y_par / 3, rv.x_par / 2, rv.y_par / 3, rv.x_par / 4);
+  w_alert_text = subwin(w_alert, (rv.y_par / 3) - 1, (rv.x_par / 2) - 2, (rv.y_par / 3) + 1, (rv.x_par / 4) + 1);
+  assert(w_alert || w_alert_text != NULL);
+  box(w_alert, 0 , 0);
+  mvwaddstr(w_alert_text,0,0,msg);
+  // Input is going to go into blocking mode on purpose to leave window up until a key is pressed
+  raw();
+  wgetch(w_alert);
+  // cleanup the window, and go back to non blocking input mode
+  // ugly way to clear the border completely
+  wborder(w_alert, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+  werase(w_alert);
+  werase(w_alert_text);
+  wrefresh(w_alert);
+  wrefresh(w_alert_text);
+  delwin(w_alert);
+  delwin(w_alert_text);
+  halfdelay(10);
+  rv.need_redraw = TRUE;
+}
