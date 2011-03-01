@@ -46,22 +46,49 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
 static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password) {
   CURL *curl_handle;
   struct MemoryStruct chunk;
+  int rcode = 0;
 
   chunk.memory = malloc(1);
   chunk.size = 0;
-  curl_global_init(CURL_GLOBAL_ALL);
+  chunk.errored = 0;
+  if ((rcode = curl_global_init(CURL_GLOBAL_ALL)) != 0) {
+      printf("Couldn't do global curl initialization.\nError code: %d\n", rcode);
+      chunk.errored = 1;
+      return chunk;
+  }
   /* init the curl session */
-  curl_handle = curl_easy_init();
+  if ((curl_handle = curl_easy_init()) == NULL) {
+      printf("Couldn't init curl session.\n");
+      chunk.errored = 1;
+      return chunk;
+  }
   /* specify URL to get */
-  curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+  if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_URL, url)) != 0) {
+      printf("Couldn't setopt CURLOPT_URL.\nError code: %d", rcode);
+      chunk.errored = 1;
+      return chunk;
+  }
   /* send all data to this function  */
-  curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+  if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback)) != 0) {
+      printf("Couldn't setopt CURLOPT_WRITEFUNCTION.\nError code: %d", rcode);
+      chunk.errored = 1;
+      return chunk;
+  }
   /* we pass our 'chunk' struct to the callback function */
-  curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
+  if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk)) != 0) {
+      printf("Couldn't setopt CURLOPT_WRITEDATE.\nError code: %d", rcode);
+      chunk.errored = 1;
+      return chunk;
+  }
   /* some servers don't like requests that are made without a user-agent
      field, so we provide one */
-  curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+  if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0")) != 0) {
+      printf("Couldn't setopt CURLOPT_USERAGENT.\nError code: %d", rcode);
+      chunk.errored = 1;
+      return chunk;
+  }
   // Gmail part
+  // XXX: check for errors here!
   if(auth == TRUE) {
     char login[512];
     snprintf(login,512,"%s:%s",username,password);
@@ -69,7 +96,11 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
     curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login);
   }
   /* get it! */
-  curl_easy_perform(curl_handle);
+  if ((rcode = curl_easy_perform(curl_handle)) != 0 ) {
+      printf("Couldn't download.\nError code: %d", rcode);
+      chunk.errored = 1;
+      return chunk;
+  }
   /* cleanup curl stuff */
   curl_easy_cleanup(curl_handle);
   /*
@@ -315,6 +346,11 @@ load_feed(char *url, int reload,
     buffer = _load_url(rf->url, auth, username, password);
   } else
     buffer = _load_url(url, auth, username, password);
+  
+  // if an error ocurred during curl shit, exit
+  // XXX: this is ugly!
+  if (buffer.errored)
+      return NULL;
 
   // do xml parsing
   doc = xmlReadMemory(buffer.memory,buffer.size,"noname.xml",NULL,0);

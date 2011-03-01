@@ -26,6 +26,7 @@ typedef struct rss_feed {
 struct MemoryStruct {
   char *memory;
   size_t size;
+  int errored;
 };
 
 // public accessable prototypes
