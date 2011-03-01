@@ -369,9 +369,11 @@ void print_feed(rss_feed_t *r) {
 
 // public function to cleanup an rss feed
 void free_feed(rss_feed_t *rf) {
-  if(rf->first != NULL)
-    _free_items(rf);
-  free(rf);
+    if(rf != NULL){
+        if(rf->first != NULL)
+            _free_items(rf);
+        free(rf);
+    }
 }
 
 rss_item_t * get_item(rss_feed_t *rf, int index) {
