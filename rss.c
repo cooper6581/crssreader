@@ -128,15 +128,17 @@ static void _free_items(rss_feed_t *r) {
   int i = 0;
   rss_item_t *ri;
   rss_item_t *temp;
-  ri = r->first;
-  while(ri != NULL) {
+  if (r != NULL) {
+      ri = r->first;
+      while(ri != NULL) {
 #ifdef DEBUG
-    printf("Freeing article %02d\n",i);
+          printf("Freeing article %02d\n",i);
 #endif
-    temp = ri->next;
-    free(ri);
-    ri=temp;
-    i++;
+          temp = ri->next;
+          free(ri);
+          ri=temp;
+          i++;
+      }
   }
 }
 
@@ -169,7 +171,13 @@ static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
         strncpy(ri->pubdate,(char *)key,CHARMAX);
         xmlFree(key);
       }
-    }
+    } else if (xmlStrcmp(cur->name, (const xmlChar *)"description") == 0) {
+      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+      if (key != NULL) {
+        strncpy(ri->desc,(char *)key,CHARMAX);
+        xmlFree(key);
+      }
+    } 
     cur = cur->next;
   }
   if(r->first == NULL) {
@@ -208,6 +216,12 @@ static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
       key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
       if (key != NULL) {
         strncpy(ri->pubdate,(char *)key,CHARMAX);
+        xmlFree(key);
+      }
+    } else if (xmlStrcmp(cur->name, (const xmlChar *)"summary") == 0) {
+      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
+      if (key != NULL) {
+        strncpy(ri->desc,(char *)key,CHARMAX);
         xmlFree(key);
       }
     }

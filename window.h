@@ -63,6 +63,7 @@ void draw_titles(void);
 void cleanup_view(void);
 void draw_status(const char *msg);
 void select_article(void);
+void show_article(void);
 void select_feed(void);
 void debug_msg(const char *msg);
 void *reload(void *t);

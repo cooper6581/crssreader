@@ -179,6 +179,10 @@ int main(int argc, char **argv) {
         }
         else
             select_article();
+    } else if (rv.c == '>') {
+        if (!rv.title_viewing) {
+            show_article();
+        }
     }
   }
 

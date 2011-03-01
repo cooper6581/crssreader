@@ -379,6 +379,14 @@ void select_article(void) {
   system(command);
 }
 
+void show_article(void) {
+  rss_window_t *rw;
+  rss_item_t *ri = NULL;
+  rw = get_current_rss_window();
+  ri = get_item(rw->r,rv.cursor);
+  alert(ri->desc);
+}
+
 void select_feed(void) {
   // the index we want, is where our cursor is
   // when viewing the titles

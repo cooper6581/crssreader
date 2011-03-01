@@ -9,6 +9,7 @@ typedef struct rss_item {
   char title[CHARMAX];
   char link[CHARMAX];
   char pubdate[CHARMAX];
+  char desc[CHARMAX];
   struct rss_item *next;
 } rss_item_t;
 
