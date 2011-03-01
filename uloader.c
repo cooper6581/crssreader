@@ -82,7 +82,7 @@ static int get_key(char *line_buffer, char *value, int buffer_size) {
     ++l;
   }
   // Copy our value
-  while(*l != '\0' && i < buffer_size) {
+  while(*l != '\0' && *l != '#' && i < buffer_size) {
     value[j++] = *l++;
   }
   value[j] = '\0';
