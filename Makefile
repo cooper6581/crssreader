@@ -5,7 +5,7 @@ PREFIX=/usr
 TARGET=rssreader
 
 CC=gcc
-CFLAGS=-Wall -std=c99
+CFLAGS=-Wall -std=c99 -pthread
 LIBS=-l xml2 -l curl
 DBGFLAGS=
 LDFLAGS=-L$(PREFIX)/lib
@@ -14,7 +14,7 @@ INCDIR=-I$(PREFIX)/include -I$(PREFIX)/include/libxml2
 ifeq ($(debug), 1)
 	DBGFLAGS+= -g
 else
-	CFLAGS+=-pthread -D NDEBUG
+	CFLAGS+=-D NDEBUG
 endif
 
 ifeq ($(dist), OSX)
