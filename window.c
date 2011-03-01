@@ -468,7 +468,7 @@ void alert(const char *msg) {
   int length = 0;
   length = strlen(msg);
   w_alert = newwin(rv.y_par / 3, rv.x_par / 2, rv.y_par / 3, rv.x_par / 4);
-  w_alert_text = subwin(w_alert, (rv.y_par / 3) - 1, (rv.x_par / 2) - 2, (rv.y_par / 3) + 1, (rv.x_par / 4) + 1);
+  w_alert_text = subwin(w_alert, (rv.y_par / 3) - 2, (rv.x_par / 2) - 2, (rv.y_par / 3) + 1, (rv.x_par / 4) + 1);
   assert(w_alert || w_alert_text != NULL);
   box(w_alert, 0 , 0);
   mvwaddstr(w_alert_text,0,0,msg);
