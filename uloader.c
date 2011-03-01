@@ -168,9 +168,12 @@ static int load_file(const char *file_name, char **b) {
   FILE *fh;
   size_t fsize;
   char *buffer;
-
-  // TODO: check if the file exists and exit cleanly with a message
+  
   fh = fopen(file_name, "r");
+  if (fh == NULL) {
+      printf("Couldn't open file %s.\n", file_name);
+      exit(-1);
+  }
   assert(fh != NULL);
   fseek(fh,0,SEEK_END);
   fsize = ftell(fh);
