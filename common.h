@@ -4,4 +4,7 @@
 #define TRUE 1
 #define FALSE 0
 
+#define RC_NAME ".rssreaderrc"
+
+
 #endif

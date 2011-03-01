@@ -9,8 +9,9 @@
 #include "common.h"
 
 // config filename
-const char *def_cfg_fname = ".rssreaderrc";
-// rssreader version
+const char def_cfg_fname[] = RC_NAME;
+// rssreader version 
+//XXX: move this into a config.h file
 const char *version = "0.0.1";
 
 // our global rss_view
