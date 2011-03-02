@@ -51,20 +51,25 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
 // Callback used by SAX to strip html
 void _character_callback(void *user_data, const xmlChar* ch, int len) {
   struct sax_parser *sp = user_data;
-  if(sp->buffer == NULL)
-    sp->buffer = malloc(sizeof(char) * CHARMAX * 50);
-  strncat(sp->buffer,(char *)ch,len + 1);
+  strncat(sp->buffer,(char *)ch,len+1);
 }
 
 // Callback used for end document
 void endDocument (void *user_data) {
   struct sax_parser *sp = user_data;
-  if(sp->final == NULL) {
-    sp->final = malloc(sizeof(char) * CHARMAX * 50);
-    strncpy(sp->final,sp->buffer,CHARMAX * 50);
-  }
-  if(sp->buffer)
+  sp->final = malloc(sizeof(char) * CHARMAX * 32);
+  strncpy(sp->final,sp->buffer,strlen(sp->buffer)+1);
+  memset(sp->buffer,0,CHARMAX * 16);
+  free(sp->buffer);
+}
+
+// I hate this
+void startDocument (void *user_data) {
+  struct sax_parser *sp = user_data;
+  if(sp->buffer != NULL)
     free(sp->buffer);
+  sp->buffer = malloc(sizeof(char) * CHARMAX * 16);
+  sp->final = NULL;
 }
 
 // Used to strip html from text
@@ -77,6 +82,7 @@ static char * _strip_html(char *s) {
   xmlSAXHandler handler; bzero(&handler, sizeof(xmlSAXHandler));
   handler.characters = &_character_callback;
   handler.endDocument = &endDocument;
+  handler.startDocument = &startDocument;
 
   htmlSAXParseDoc((xmlChar*)s,"utf-8", &handler, &sp);
 
@@ -226,7 +232,6 @@ static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
           strncpy(ri->desc,(char *)stripped,CHARMAX);
           free(stripped);
         }
-        //strncpy(ri->desc,(char *)key,CHARMAX);
         xmlFree(key);
       }
     } 
@@ -273,7 +278,11 @@ static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
     } else if (xmlStrcmp(cur->name, (const xmlChar *)"summary") == 0) {
       key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
       if (key != NULL) {
-        strncpy(ri->desc,(char *)key,CHARMAX);
+        char *stripped = _strip_html((char *)key);
+        if(stripped != NULL) {
+          strncpy(ri->desc,(char *)&stripped[1],CHARMAX);
+          free(stripped);
+        }
         xmlFree(key);
       }
     }
