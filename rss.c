@@ -4,6 +4,7 @@
 
 #include <curl/curl.h>
 #include <libxml/xmlmemory.h>
+#include <libxml/HTMLparser.h>
 #include <libxml/parser.h>
 #include <assert.h>
 
@@ -13,15 +14,22 @@
 // prototypes
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data);
 static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password);
+static char * _strip_html(char *s);
 static void _free_items(rss_feed_t *r);
 static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_channel_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_channel_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
+void _character_callback(void *user_data, const xmlChar* ch, int len);
+
+void init_parser(void) {
+  // supposed to fix my threading issues?
+  xmlInitParser();
+}
 
 
-// Calback used by libcurl
+// Callback used by libcurl
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data) {
   size_t realsize = size * nmemb;
   struct MemoryStruct *mem = (struct MemoryStruct *)data;
@@ -38,6 +46,45 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
   mem->memory[mem->size] = 0;
 
   return realsize;
+}
+
+// Callback used by SAX to strip html
+void _character_callback(void *user_data, const xmlChar* ch, int len) {
+  struct sax_parser *sp = user_data;
+  if(sp->buffer == NULL)
+    sp->buffer = malloc(sizeof(char) * CHARMAX * 50);
+  strncat(sp->buffer,(char *)ch,len + 1);
+}
+
+// Callback used for end document
+void endDocument (void *user_data) {
+  struct sax_parser *sp = user_data;
+  if(sp->final == NULL) {
+    sp->final = malloc(sizeof(char) * CHARMAX * 50);
+    strncpy(sp->final,sp->buffer,CHARMAX * 50);
+  }
+  if(sp->buffer)
+    free(sp->buffer);
+}
+
+// Used to strip html from text
+// Returns character array that needs to be FREED!
+static char * _strip_html(char *s) {
+  int mem_base = xmlMemBlocks();
+  struct sax_parser sp;
+  sp.buffer = NULL;
+  sp.final = NULL;
+  xmlSAXHandler handler; bzero(&handler, sizeof(xmlSAXHandler));
+  handler.characters = &_character_callback;
+  handler.endDocument = &endDocument;
+
+  htmlSAXParseDoc((xmlChar*)s,"utf-8", &handler, &sp);
+
+  if (mem_base != xmlMemBlocks()) {
+    printf("Leak of %d blocks found in htmlSAXParseDoc",
+      xmlMemBlocks() - mem_base);
+  }
+  return sp.final;
 }
 
 // Internal function used to load url to memory
@@ -174,7 +221,12 @@ static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
     } else if (xmlStrcmp(cur->name, (const xmlChar *)"description") == 0) {
       key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
       if (key != NULL) {
-        strncpy(ri->desc,(char *)key,CHARMAX);
+        char *stripped = _strip_html((char *)key);
+        if(stripped != NULL) {
+          strncpy(ri->desc,(char *)stripped,CHARMAX);
+          free(stripped);
+        }
+        //strncpy(ri->desc,(char *)key,CHARMAX);
         xmlFree(key);
       }
     } 
@@ -275,7 +327,7 @@ static void _parse_channel_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
     } else if (xmlStrcmp(cur->name, (const xmlChar *)"subtitle") == 0) {
       key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
       if (key != NULL) {
-       strncpy(r->desc,(char *)key,CHARMAX);
+       strncpy(r->link,(char *)key,CHARMAX);
        xmlFree(key);
       }
     } else if (xmlStrcmp(cur->name, (const xmlChar *)"link") == 0) {
@@ -413,6 +465,7 @@ void print_feed(rss_feed_t *r) {
   ri = r->first;
   while(ri != NULL) {
     printf("%03d: %s\n",article_number++, ri->title);
+    printf("\t%s\n",ri->desc);
     ri = ri->next;
   }
 }

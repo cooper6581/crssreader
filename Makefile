@@ -26,5 +26,7 @@ endif
 
 all:
 	gcc -D $(dist) $(DBGFLAGS) $(CFLAGS) $(INCDIR) -o $(TARGET) rss.c uloader.c window.c main.c $(LDFLAGS) $(LIBS)
+test:
+	gcc -D $(dist) $(DBGFLAGS) $(CFLAGS) $(INCDIR) -o test rss.c test.c $(LDFLAGS) $(LIBS)
 clean:
-	rm -rf $(TARGET) rssreader.* test_rss.*
+	rm -rf $(TARGET) rssreader.* test_rss.* test test.d*

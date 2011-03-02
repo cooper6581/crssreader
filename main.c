@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
     return help(argv[0]);
 
   setlocale(LC_ALL, "");
+  init_parser();
   if (argc == 1) {
     /*
       TODO: fix this shit. string manipulation like this is so
