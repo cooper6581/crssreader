@@ -51,15 +51,15 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
 // Callback used by SAX to strip html
 void _character_callback(void *user_data, const xmlChar* ch, int len) {
   struct sax_parser *sp = user_data;
-  strncat(sp->buffer,(char *)ch,len+1);
+  strncat(sp->buffer,(char *)ch,len);
 }
 
 // Callback used for end document
 void endDocument (void *user_data) {
   struct sax_parser *sp = user_data;
   sp->final = malloc(sizeof(char) * CHARMAX * 32);
-  strncpy(sp->final,sp->buffer,strlen(sp->buffer)+1);
-  memset(sp->buffer,0,CHARMAX * 16);
+  strncpy(sp->final,sp->buffer,strlen(sp->buffer));
+  //memset(sp->buffer,0,CHARMAX * 16);
   free(sp->buffer);
 }
 
@@ -229,7 +229,7 @@ static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
       if (key != NULL) {
         char *stripped = _strip_html((char *)key);
         if(stripped != NULL) {
-          strncpy(ri->desc,(char *)stripped,CHARMAX);
+          strncpy(ri->desc,(char *)&stripped[1],CHARMAX);
           free(stripped);
         }
         xmlFree(key);
