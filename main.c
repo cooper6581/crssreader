@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
       yank();
     // Just a test to see if the pop-up window is working
     } else if (rv.c == '?') {
-      alert("This is a help window! I'm going to purposefully type a lot of text here to see what happens");
+      alert("This is a help window!\n I'm going to purposefully type a lot of text here to see what happens");
     // enter
     } else if (rv.c == '\n') {
         if (rv.title_viewing) {

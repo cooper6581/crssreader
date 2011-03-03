@@ -72,6 +72,7 @@ void *auto_refresh(void *t);
 void yank(void);
 void check_time(void);
 void alert(const char *msg);
+void content(const char *msg);
 rss_window_t * get_current_rss_window(void);
 rss_window_t * get_rss_window_at_index(int index);
 

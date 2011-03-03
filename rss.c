@@ -229,7 +229,7 @@ static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
       if (key != NULL) {
         char *stripped = _strip_html((char *)key);
         if(stripped != NULL) {
-          strncpy(ri->desc,(char *)&stripped[1],CHARMAX);
+          strncpy(ri->desc,(char *)stripped,CHARMAX);
           free(stripped);
         }
         xmlFree(key);
@@ -280,7 +280,7 @@ static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
       if (key != NULL) {
         char *stripped = _strip_html((char *)key);
         if(stripped != NULL) {
-          strncpy(ri->desc,(char *)&stripped[1],CHARMAX);
+          strncpy(ri->desc,(char *)stripped,CHARMAX);
           free(stripped);
         }
         xmlFree(key);

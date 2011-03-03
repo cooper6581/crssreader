@@ -384,7 +384,7 @@ void show_article(void) {
   rss_item_t *ri = NULL;
   rw = get_current_rss_window();
   ri = get_item(rw->r,rv.cursor);
-  alert(ri->desc);
+  content(ri->desc);
 }
 
 void select_feed(void) {
@@ -469,6 +469,35 @@ void alert(const char *msg) {
   length = strlen(msg);
   w_alert = newwin(rv.y_par / 3, rv.x_par / 2, rv.y_par / 3, rv.x_par / 4);
   w_alert_text = subwin(w_alert, (rv.y_par / 3) - 2, (rv.x_par / 2) - 2, (rv.y_par / 3) + 1, (rv.x_par / 4) + 1);
+  assert(w_alert || w_alert_text != NULL);
+  box(w_alert, 0 , 0);
+  mvwaddstr(w_alert_text,0,0,msg);
+  // Input is going to go into blocking mode on purpose to leave window up until a key is pressed
+  raw();
+  wgetch(w_alert);
+  // cleanup the window, and go back to non blocking input mode
+  // ugly way to clear the border completely
+  wborder(w_alert, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+  werase(w_alert);
+  werase(w_alert_text);
+  wrefresh(w_alert);
+  wrefresh(w_alert_text);
+  delwin(w_alert);
+  delwin(w_alert_text);
+  halfdelay(10);
+  rv.need_redraw = TRUE;
+}
+
+// This is a content window (larger than an alert window)
+void content(const char *msg) {
+  WINDOW *w_alert = NULL;
+  WINDOW *w_alert_text = NULL;
+  int length = 0;
+  int content_y = rv.y_par -8;
+  int content_x = rv.x_par -8;
+  length = strlen(msg);
+  w_alert = newwin(content_y, content_x, 4, 4);
+  w_alert_text = subwin(w_alert, content_y - 3,  content_x - 4, 5, 6);
   assert(w_alert || w_alert_text != NULL);
   box(w_alert, 0 , 0);
   mvwaddstr(w_alert_text,0,0,msg);
