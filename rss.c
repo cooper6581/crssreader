@@ -51,15 +51,17 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
 // Callback used by SAX to strip html
 void _character_callback(void *user_data, const xmlChar* ch, int len) {
   struct sax_parser *sp = user_data;
-  strncat(sp->buffer,(char *)ch,len);
+  sp->buffer = realloc(sp->buffer,sizeof(char) * (sp->bytes_copied + len + 1));
+  memcpy(&(sp->buffer[sp->bytes_copied]), (char *)ch, len+1);
+  sp->bytes_copied += len;
 }
 
 // Callback used for end document
 void endDocument (void *user_data) {
   struct sax_parser *sp = user_data;
-  sp->final = malloc(sizeof(char) * CHARMAX * 32);
-  strncpy(sp->final,sp->buffer,strlen(sp->buffer));
-  //memset(sp->buffer,0,CHARMAX * 16);
+  sp->buffer[sp->bytes_copied] = '\0';
+  sp->final = malloc(sizeof(char) * sp->bytes_copied+1);
+  strncpy(sp->final,sp->buffer,sp->bytes_copied+1);
   free(sp->buffer);
 }
 
@@ -68,7 +70,7 @@ void startDocument (void *user_data) {
   struct sax_parser *sp = user_data;
   if(sp->buffer != NULL)
     free(sp->buffer);
-  sp->buffer = malloc(sizeof(char) * CHARMAX * 16);
+  //sp->buffer = realloc(sp->buffer,sizeof(char) * 1);
   sp->final = NULL;
 }
 
@@ -77,13 +79,17 @@ void startDocument (void *user_data) {
 static char * _strip_html(char *s) {
   int mem_base = xmlMemBlocks();
   struct sax_parser sp;
+  // init our sax parser struct
   sp.buffer = NULL;
   sp.final = NULL;
+  sp.bytes_copied = 0;
+  // setup our callbacks
   xmlSAXHandler handler; bzero(&handler, sizeof(xmlSAXHandler));
   handler.characters = &_character_callback;
   handler.endDocument = &endDocument;
   handler.startDocument = &startDocument;
 
+  // cross our fingers
   htmlSAXParseDoc((xmlChar*)s,"utf-8", &handler, &sp);
 
   if (mem_base != xmlMemBlocks()) {

@@ -33,6 +33,7 @@ struct MemoryStruct {
 struct sax_parser {
   char *buffer;
   char *final;
+  int bytes_copied;
 };
 
 // public accessable prototypes
