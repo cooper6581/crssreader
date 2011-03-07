@@ -42,5 +42,6 @@ rss_item_t * get_item(rss_feed_t *rf, int index);
 void print_feed(rss_feed_t *rf);
 void free_feed(rss_feed_t *rf);
 void init_parser(void);
+void cleanup_parser(void);
 
 #endif

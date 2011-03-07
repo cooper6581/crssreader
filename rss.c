@@ -21,13 +21,19 @@ static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_channel_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_channel_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
-void _character_callback(void *user_data, const xmlChar* ch, int len);
+static void _character_callback(void *user_data, const xmlChar* ch, int len);
+static void _endDocument (void *user_data);
+static void _startDocument (void *user_data);
+
 
 void init_parser(void) {
   // supposed to fix my threading issues?
   xmlInitParser();
 }
 
+void cleanup_parser(void) {
+  xmlCleanupParser();
+}
 
 // Callback used by libcurl
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data) {
@@ -37,7 +43,7 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
   mem->memory = realloc(mem->memory, mem->size + realsize + 1);
   if (mem->memory == NULL) {
     /* out of memory! */
-    printf("not enough memory (realloc returned NULL)\n");
+    fprintf(stderr,"Not enough memory (realloc returned NULL in curl callback)\n");
     exit(EXIT_FAILURE);
   }
 
@@ -49,35 +55,44 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
 }
 
 // Callback used by SAX to strip html
-void _character_callback(void *user_data, const xmlChar* ch, int len) {
+static void _character_callback(void *user_data, const xmlChar* ch, int len) {
   struct sax_parser *sp = user_data;
   sp->buffer = realloc(sp->buffer,sizeof(char) * (sp->bytes_copied + len + 1));
+  if(sp->buffer == NULL) {
+    fprintf(stderr,"Not enough memory (realloc returned NULL in sax callback)\n");
+    exit(EXIT_FAILURE);
+  }
   memcpy(&(sp->buffer[sp->bytes_copied]), (char *)ch, len+1);
   sp->bytes_copied += len;
 }
 
 // Callback used for end document
-void endDocument (void *user_data) {
+static void _endDocument (void *user_data) {
   struct sax_parser *sp = user_data;
   sp->buffer[sp->bytes_copied] = '\0';
   sp->final = malloc(sizeof(char) * sp->bytes_copied+1);
+  if(sp->buffer == NULL) {
+    fprintf(stderr,"Not enough memory (malloc returned NULL in sax endDocument callback)\n");
+    exit(EXIT_FAILURE);
+  }
   strncpy(sp->final,sp->buffer,sp->bytes_copied+1);
-  free(sp->buffer);
+  if(sp->buffer != NULL)
+    free(sp->buffer);
 }
 
 // I hate this
-void startDocument (void *user_data) {
+static void _startDocument (void *user_data) {
   struct sax_parser *sp = user_data;
   if(sp->buffer != NULL)
     free(sp->buffer);
-  //sp->buffer = realloc(sp->buffer,sizeof(char) * 1);
   sp->final = NULL;
 }
 
 // Used to strip html from text
 // Returns character array that needs to be FREED!
 static char * _strip_html(char *s) {
-  int mem_base = xmlMemBlocks();
+  int mem_base;
+  mem_base = xmlMemBlocks();
   struct sax_parser sp;
   // init our sax parser struct
   sp.buffer = NULL;
@@ -86,16 +101,19 @@ static char * _strip_html(char *s) {
   // setup our callbacks
   xmlSAXHandler handler; bzero(&handler, sizeof(xmlSAXHandler));
   handler.characters = &_character_callback;
-  handler.endDocument = &endDocument;
-  handler.startDocument = &startDocument;
+  handler.endDocument = &_endDocument;
+  handler.startDocument = &_startDocument;
 
   // cross our fingers
   htmlSAXParseDoc((xmlChar*)s,"utf-8", &handler, &sp);
 
+#ifdef DEBUG
   if (mem_base != xmlMemBlocks()) {
     printf("Leak of %d blocks found in htmlSAXParseDoc",
       xmlMemBlocks() - mem_base);
   }
+#endif
+
   return sp.final;
 }
 
@@ -240,7 +258,7 @@ static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
         }
         xmlFree(key);
       }
-    } 
+    }
     cur = cur->next;
   }
   if(r->first == NULL) {
@@ -313,6 +331,7 @@ static void _parse_channel_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
       xmlFree(key);
      }
     } else if  (xmlStrcmp(cur->name, (const xmlChar *)"description") == 0) {
+     // Should html be stripped from channel descriptions?
      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
      if (key != NULL) {
        strncpy(r->desc,(char *)key,CHARMAX);
@@ -427,7 +446,7 @@ load_feed(char *url, int reload,
     buffer = _load_url(rf->url, auth, username, password);
   } else
     buffer = _load_url(url, auth, username, password);
-  
+
   // if an error ocurred during curl shit, exit
   // XXX: this is ugly!
   if (buffer.errored)

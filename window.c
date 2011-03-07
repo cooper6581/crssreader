@@ -229,6 +229,7 @@ void * reload(void *t) {
   if (rv.is_reloading)
     pthread_exit(NULL);
 
+  pthread_mutex_lock(&rmutex);
   rv.is_reloading = TRUE;
   memset(tmp_message,0,rv.x_par);
   // if t has a value, lets get that rss_window index, if not
@@ -242,20 +243,17 @@ void * reload(void *t) {
   rf = rw->r;
   snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
   draw_status(tmp_message);
-  pthread_mutex_lock(&rmutex);
   load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
-  pthread_mutex_unlock(&rmutex);
   // set the updated time of the window
   time(&rawtime);
   timeinfo = localtime(&rawtime);
-  pthread_mutex_lock(&rmutex);
   strftime(rw->updated,6,"%H:%M",timeinfo);
   rw->timer = rw->auto_refresh;
-  pthread_mutex_unlock(&rmutex);
   snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
   draw_status(tmp_message);
   rv.need_redraw = TRUE;
   rv.is_reloading = FALSE;
+  pthread_mutex_unlock(&rmutex);
   pthread_exit(NULL);
 }
 
@@ -270,6 +268,7 @@ void * reload_all(void *t) {
   if (rv.is_reloading)
     pthread_exit(NULL);
 
+  pthread_mutex_lock(&rmutex);
   rv.is_reloading = TRUE;
   memset(tmp_message,0,rv.x_par);
   for(int i = 0;i<rv.w_amount;i++) {
@@ -278,21 +277,18 @@ void * reload_all(void *t) {
     rf = rw->r;
     snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
     draw_status(tmp_message);
-    pthread_mutex_lock(&rmutex);
     load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
-    pthread_mutex_unlock(&rmutex);
     // set the updated time of the window
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    pthread_mutex_lock(&rmutex);
     strftime(rw->updated,6,"%H:%M",timeinfo);
     rw->timer = rw->auto_refresh;
-    pthread_mutex_unlock(&rmutex);
     snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
     draw_status(tmp_message);
   }
   rv.is_reloading = FALSE;
   rv.need_redraw = TRUE;
+  pthread_mutex_unlock(&rmutex);
   pthread_exit(NULL);
 }
 
@@ -307,6 +303,7 @@ void * auto_refresh(void *t) {
   if (rv.is_reloading)
     pthread_exit(NULL);
 
+  pthread_mutex_lock(&rmutex);
   rv.is_reloading = TRUE;
 
   memset(tmp_message,0,rv.x_par);
@@ -321,22 +318,19 @@ void * auto_refresh(void *t) {
       rf = rw->r;
       snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
       draw_status(tmp_message);
-      pthread_mutex_lock(&rmutex);
       load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
-      pthread_mutex_unlock(&rmutex);
       // set the updated time of the window
       time(&rawtime);
       timeinfo = localtime(&rawtime);
-      pthread_mutex_lock(&rmutex);
       strftime(rw->updated,6,"%H:%M",timeinfo);
       rw->timer = rw->auto_refresh;
-      pthread_mutex_unlock(&rmutex);
       snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
       draw_status(tmp_message);
     }
   }
   rv.is_reloading = FALSE;
   rv.need_redraw = TRUE;
+  pthread_mutex_unlock(&rmutex);
   pthread_exit(NULL);
 }
 
@@ -380,11 +374,16 @@ void select_article(void) {
 }
 
 void show_article(void) {
-  rss_window_t *rw;
+  rss_window_t *rw = NULL;
   rss_item_t *ri = NULL;
-  rw = get_current_rss_window();
-  ri = get_item(rw->r,rv.cursor);
-  content(ri->desc);
+  if(!rv.title_viewing) {
+    rw = get_current_rss_window();
+    ri = get_item(rw->r,rv.cursor);
+    content(ri->desc);
+  } else {
+    rw = get_rss_window_at_index(rv.cursor);
+    content(rw->r->desc);
+  }
 }
 
 void select_feed(void) {

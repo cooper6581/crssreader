@@ -181,15 +181,14 @@ int main(int argc, char **argv) {
         else
             select_article();
     } else if (rv.c == '>') {
-        if (!rv.title_viewing) {
             show_article();
-        }
     }
   }
 
   // cleanup
   endwin();
   cleanup_view();
+  cleanup_parser();
   return 0;
 }
 
