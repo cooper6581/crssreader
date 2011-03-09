@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #define CHARMAX 1024
+#define CHARMAX_ERR 512
 
 typedef struct rss_item {
   char title[CHARMAX];
@@ -28,6 +29,7 @@ struct MemoryStruct {
   char *memory;
   size_t size;
   int errored;
+  char error[CHARMAX_ERR];
 };
 
 struct sax_parser {
