@@ -62,6 +62,11 @@ int add_feed(char *url, const int autorefresh, const int auth, char *username, c
   draw_status(msg);
   rf = load_feed(url,0,NULL,auth,username,password);
 
+  if (rf == NULL) {
+      // something bad happened, we shouldn't be allocating anything
+      return -1;
+  }
+      
   // setup our rss window
   rw = malloc(sizeof(rss_window_t));
   rw->cursor = 0;
