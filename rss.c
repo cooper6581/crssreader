@@ -208,12 +208,14 @@ static void _free_items(rss_feed_t *r) {
   if (r != NULL) {
       ri = r->first;
       while(ri != NULL) {
+        temp = NULL;
 #ifdef DEBUG
           printf("Freeing article %02d\n",i);
 #endif
-          temp = ri->next;
-          if(ri)
+          if(ri != NULL) {
+            temp = ri->next;
             free(ri);
+          }
           ri=temp;
           i++;
       }

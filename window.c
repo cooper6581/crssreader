@@ -140,26 +140,28 @@ void draw_articles(void) {
   ri = rw->r->first;
   for(int i = 0;ri != NULL;i++,ri=ri->next) {
     // TODO: Make this a function
-    if(strlen(ri->title) < rv.x_par) {
-      if (i == rv.cursor) {
-        wattron(rv.w_articles,A_REVERSE);
-        mvwaddstr(rv.w_articles,i,0,ri->title);
-        wattroff(rv.w_articles,A_REVERSE);
+    if(ri->title != NULL) {
+      if(strlen(ri->title) < rv.x_par) {
+        if (i == rv.cursor) {
+          wattron(rv.w_articles,A_REVERSE);
+          mvwaddstr(rv.w_articles,i,0,ri->title);
+          wattroff(rv.w_articles,A_REVERSE);
+        }
+        else
+          mvwaddstr(rv.w_articles,i,0,ri->title);
+      } else {
+        char title[rv.x_par];
+        strncpy(title,ri->title,rv.x_par-1);
+        title[rv.x_par-1] = '>';
+        title[rv.x_par] = '\0';
+        if (i == rv.cursor) {
+          wattron(rv.w_articles,A_REVERSE);
+          mvwaddstr(rv.w_articles,i,0,title);
+          wattroff(rv.w_articles,A_REVERSE);
+        }
+        else
+          mvwaddstr(rv.w_articles,i,0,title);
       }
-      else
-        mvwaddstr(rv.w_articles,i,0,ri->title);
-    } else {
-      char title[rv.x_par];
-      strncpy(title,ri->title,rv.x_par-1);
-      title[rv.x_par-1] = '>';
-      title[rv.x_par] = '\0';
-      if (i == rv.cursor) {
-        wattron(rv.w_articles,A_REVERSE);
-        mvwaddstr(rv.w_articles,i,0,title);
-        wattroff(rv.w_articles,A_REVERSE);
-      }
-      else
-        mvwaddstr(rv.w_articles,i,0,title);
     }
   }
 
