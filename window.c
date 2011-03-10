@@ -66,7 +66,7 @@ int add_feed(char *url, const int autorefresh, const int auth, char *username, c
       // something bad happened, we shouldn't be allocating anything
       return -1;
   }
-      
+
   // setup our rss window
   rw = malloc(sizeof(rss_window_t));
   rw->cursor = 0;
@@ -192,7 +192,7 @@ void draw_titles(void) {
       rv.cursor = 0;
   if (rv.cursor >= rv.w_amount)
       rv.cursor = rv.w_amount-1;
-  
+
   rw = rv.rw_first;
   for(int i=0; rw != NULL; i++, rw = rw->next) {
       if (i == rv.cursor) {
@@ -203,7 +203,7 @@ void draw_titles(void) {
       else
           mvwaddstr(rv.w_titles, i, 0, rw->r->title);
   }
-  
+
   draw_status("Feeds Loaded");
 
   if(rv.cursor > rv.y_view + rv.y_par-2 && rv.cursor <= rv.windex)

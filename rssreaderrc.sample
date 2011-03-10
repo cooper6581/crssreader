@@ -5,6 +5,9 @@
 # Hashes are comments, blank spaces are ignored.  Keys and values
 # can be seperated by any kind of white space that isn't a new line
 
+# example of proxy setup
+# http_proxy proxy:port
+
 url http://www.reddit.com/r/learnprogramming/.rss
 refresh 120
 url http://www.reddit.com/r/programming/.rss

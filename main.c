@@ -10,7 +10,7 @@
 
 // config filename
 const char def_cfg_fname[] = RC_NAME;
-// rssreader version 
+// rssreader version
 //XXX: move this into a config.h file
 const char *version = "0.0.1";
 
@@ -19,7 +19,7 @@ extern rss_view_t rv;
 
 int help(const char *prog_name) {
   printf("Usage %s [FILE]\n"
-	 "Try `man %s` for more information.\n", 
+	 "Try `man %s` for more information.\n",
 	 prog_name, prog_name);
   return 2;
 }
@@ -36,9 +36,9 @@ int main(int argc, char **argv) {
     The assert is nice when debugging but sucks
     from a user standpoint. The down side is that we have
     to check for the arguments too. We disable asserts through
-    the Makefile when debug is disabled (-DNDEBUG). 
+    the Makefile when debug is disabled (-DNDEBUG).
   */
-  if (argc > 2) 
+  if (argc > 2)
     return help(argv[0]);
 
   setlocale(LC_ALL, "");
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     assert(home_path != NULL);
     if (home_path != NULL) {
       /* is 64 enough for home folders? Probably not!
-	 (I hate string manipulation in C) 
+	 (I hate string manipulation in C)
       */
       char tmp_path[64];
       int sz = snprintf(tmp_path, 64, "%s/%s", home_path, def_cfg_fname);
@@ -191,4 +191,3 @@ int main(int argc, char **argv) {
   cleanup_parser();
   return 0;
 }
-

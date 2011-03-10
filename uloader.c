@@ -21,7 +21,7 @@ static void push_line(void);
 
 // Each time this function is called, it returns the next line in the buffer.
 // Because of how I parse the url file, I needed to be able to push back to
-// the stack.  Instead of doing this correctly with a stack of lines, there 
+// the stack.  Instead of doing this correctly with a stack of lines, there
 // are just simply 2 global variables (b_index is the top, prev_line is the index
 // to the previous line
 static int get_line(char *line_buffer, int buffer_size) {
@@ -55,7 +55,7 @@ static int get_key(char *line_buffer, char *value, int buffer_size) {
   char *l = line_buffer;
   int i = 0;
   int j = 0;
-  int status = -1; 
+  int status = -1;
 
   while(*l != '\0' && *l != '#' && i < buffer_size) {
     i++;
@@ -72,6 +72,8 @@ static int get_key(char *line_buffer, char *value, int buffer_size) {
       status = UL_KEY_AUTH;
     else if (strncasecmp(key,"refresh",LINE_MAX) == 0)
       status = UL_KEY_REFRESH;
+    else if (strncasecmp(key,"http_proxy",LINE_MAX) == 0)
+      status = UL_KEY_PROXY;
     else
       fprintf(stderr,"Key not found: %s\n", key);
   }
@@ -90,7 +92,6 @@ static int get_key(char *line_buffer, char *value, int buffer_size) {
   return status;
 }
 
-
 static struct entries * parse_file(char *b, int fsize) {
   char line_buffer[LINE_MAX];
   char value[LINE_MAX];
@@ -106,6 +107,9 @@ static struct entries * parse_file(char *b, int fsize) {
   e->amount = 0;
   e->head = NULL;
   e->tail = NULL;
+
+  /* get proxy to NULL. if at some point is set, we know we have proxy */
+  proxies.http = NULL;
 
   while(get_line(line_buffer,LINE_MAX) != -1) {
     // this should only be executed on the first URL encountered
@@ -135,7 +139,6 @@ static struct entries * parse_file(char *b, int fsize) {
         exit(1);
       }
       et->refresh = r;
-    // we are now in a new url entry
     } else if (get_key(line_buffer,value,LINE_MAX) == UL_KEY_URL && in_url == TRUE) {
       // setup the linked list
       if(e->head == NULL) {
@@ -149,6 +152,11 @@ static struct entries * parse_file(char *b, int fsize) {
       in_url = FALSE;
       // push back to the stack
       push_line();
+    } else if (get_key(line_buffer, value, LINE_MAX) == UL_KEY_PROXY) {
+        //let's get the proxies
+        proxies.http = (char *)malloc(sizeof(char) * strlen(value));
+        (void)strncpy(proxies.http, value, sizeof(value));
+        proxies.http[sizeof(proxies.http) - 1] = '\0';
     }
   }
   // last entry
@@ -168,7 +176,7 @@ static int load_file(const char *file_name, char **b) {
   FILE *fh;
   size_t fsize;
   char *buffer;
-  
+
   fh = fopen(file_name, "r");
   if (fh == NULL) {
       printf("Couldn't open file %s.\n", file_name);
@@ -213,4 +221,3 @@ void free_entries(struct entries *et) {
     e = temp;
   }
 }
-

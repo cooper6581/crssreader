@@ -8,6 +8,7 @@
 #define UL_KEY_URL 1
 #define UL_KEY_AUTH 2
 #define UL_KEY_REFRESH 3
+#define UL_KEY_PROXY 4
 
 struct entry {
   char url[URL_MAX];

@@ -17,6 +17,9 @@
 // globals
 pthread_mutex_t rmutex;
 
+// globals for proxies
+proxy_config proxies;
+
 // prototypes
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data);
 static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password);
@@ -180,6 +183,16 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
     curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
     curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login);
   }
+
+  /* setup proxy */
+  if (proxies.http != NULL)
+      if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_PROXY, proxies.http)) != 0) {
+          snprintf(chunk.error, CHARMAX_ERR,
+                   "Couldn't setopt CURLOPT_PROXY for %s.\nError code: %d", url, rcode);
+          chunk.errored = 1;
+          return chunk;
+      }
+
   /* get it! */
   if ((rcode = curl_easy_perform(curl_handle)) != 0 ) {
       snprintf(chunk.error, CHARMAX_ERR, "Couldn't download from %s.\nError code: %d", url, rcode);
