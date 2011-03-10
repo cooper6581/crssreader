@@ -244,8 +244,14 @@ void * reload(void *t) {
   memset(tmp_message,0,rv.x_par);
   // if t has a value, lets get that rss_window index, if not
   // we will default to current window
-  if(t == NULL)
-    rw = get_current_rss_window();
+  if(t == NULL) {
+      rw = get_current_rss_window();
+      if (rw == NULL) {
+          pthread_mutex_unlock(&rmutex);
+          pthread_exit(NULL);
+          return NULL;
+      }
+  }
   else {
     window_index = *(int *)t;
     rw = get_rss_window_at_index(window_index);
