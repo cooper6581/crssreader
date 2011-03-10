@@ -132,6 +132,9 @@ void draw_articles(void) {
   rss_window_t *rw = NULL;
 
   rw = get_current_rss_window();
+  if (rw == NULL)
+      return;
+
   werase(rv.w_articles);
 
   if (rv.cursor < 0)
@@ -370,6 +373,9 @@ void select_article(void) {
   rss_window_t *rw;
 
   rw = get_current_rss_window();
+  if (rw == NULL)
+      return;
+
   char command[1024];
   rss_item_t *ri = NULL;
   ri = get_item(rw->r,rv.cursor);
