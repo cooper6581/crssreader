@@ -8,9 +8,14 @@
 #include <libxml/parser.h>
 #include <assert.h>
 
+#include <pthread.h>
+
 #include "common.h"
 #include "rss.h"
 #include "window.h"
+
+// globals
+pthread_mutex_t rmutex;
 
 // prototypes
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data);
@@ -208,6 +213,9 @@ static void _free_items(rss_feed_t *r) {
   int i = 0;
   rss_item_t *ri;
   rss_item_t *temp;
+
+  pthread_mutex_lock(&rmutex);
+
   if (r != NULL) {
       ri = r->first;
       while(ri != NULL) {
@@ -223,6 +231,8 @@ static void _free_items(rss_feed_t *r) {
           i++;
       }
   }
+  pthread_mutex_unlock(&rmutex);
+  pthread_exit(NULL);
 }
 
 // Populates the rss item linked list

@@ -397,6 +397,8 @@ void show_article(void) {
   rss_item_t *ri = NULL;
   if(!rv.title_viewing) {
     rw = get_current_rss_window();
+    if (rw == NULL)
+        return;
     ri = get_item(rw->r,rv.cursor);
     content(ri->desc);
   } else {
@@ -428,6 +430,9 @@ rss_window_t * get_current_rss_window(void) {
 rss_window_t * get_rss_window_at_index(int index) {
   rss_window_t *rw = NULL;
   rw = rv.rw_first;
+  if (rw == NULL)
+      return NULL;
+
   for(int i = 0; i != index; i++)
     rw = rw->next;
   return rw;
