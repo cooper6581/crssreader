@@ -479,10 +479,11 @@ load_feed(char *url, int reload,
     // Free old articles
     rf = feed;
     // fire off our free items thread, this will block, this is on purpose
+    // TODO:  Load to a temporary variable, then copy it over.  Once this is done
+    // we can detach the _free_items thread (although this operation should be SUPER quick
+    // anyway).
     pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
     pthread_join(free_rf_thread,NULL);
-    //pthread_detach(free_rf_thread);
-    //_free_items(rf);
   // Here we are going to load the url into memory
     buffer = _load_url(rf->url, auth, username, password);
   } else

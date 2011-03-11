@@ -19,8 +19,8 @@ extern rss_view_t rv;
 
 int help(const char *prog_name) {
   printf("Usage %s [FILE]\n"
-	 "Try `man %s` for more information.\n",
-	 prog_name, prog_name);
+  "Try `man %s` for more information.\n",
+  prog_name, prog_name);
   return 2;
 }
 

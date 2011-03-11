@@ -298,7 +298,9 @@ void * reload_all(void *t) {
     rf = rw->r;
     snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
     draw_status(tmp_message);
+    rw->is_loading_feed = TRUE;
     load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
+    rw->is_loading_feed = FALSE;
     // set the updated time of the window
     time(&rawtime);
     timeinfo = localtime(&rawtime);
@@ -339,7 +341,9 @@ void * auto_refresh(void *t) {
       rf = rw->r;
       snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
       draw_status(tmp_message);
+      rw->is_loading_feed = TRUE;
       load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
+      rw->is_loading_feed = FALSE;
       // set the updated time of the window
       time(&rawtime);
       timeinfo = localtime(&rawtime);
