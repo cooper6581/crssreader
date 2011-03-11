@@ -77,6 +77,7 @@ int add_feed(char *url, const int autorefresh, const int auth, char *username, c
   rw->auth = auth;
   rw->username = NULL;
   rw->password = NULL;
+  rw->is_loading_feed = FALSE;
   if (auth == TRUE) {
     rw->username = malloc(sizeof(char) * AUTH_MAX);
     rw->password = malloc(sizeof(char) * AUTH_MAX);
@@ -132,7 +133,7 @@ void draw_articles(void) {
   rss_window_t *rw = NULL;
 
   rw = get_current_rss_window();
-  if (rw == NULL)
+  if (rw == NULL || rw->is_loading_feed == TRUE)
       return;
 
   werase(rv.w_articles);
@@ -146,9 +147,9 @@ void draw_articles(void) {
     mvwaddstr(rv.w_articles,0,0,"No feeds available.");
 
   ri = rw->r->first;
-  for(int i = 0;ri != NULL;i++,ri=ri->next) {
+  if(ri != NULL) {
+    for(int i = 0;ri != NULL;i++,ri=ri->next) {
     // TODO: Make this a function
-    if(ri->title != NULL) {
       if(strlen(ri->title) < rv.x_par) {
         if (i == rv.cursor) {
           wattron(rv.w_articles,A_REVERSE);
@@ -236,8 +237,10 @@ void * reload(void *t) {
   rss_window_t *rw = NULL;
   int window_index = 0;
 
-  if (rv.is_reloading)
+  if (rv.is_reloading) {
+    draw_status("rv.is_reloading set to true, exiting");
     pthread_exit(NULL);
+  };
 
   pthread_mutex_lock(&rmutex);
   rv.is_reloading = TRUE;
@@ -259,7 +262,9 @@ void * reload(void *t) {
   rf = rw->r;
   snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
   draw_status(tmp_message);
+  rw->is_loading_feed = TRUE;
   load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
+  rw->is_loading_feed = FALSE;
   // set the updated time of the window
   time(&rawtime);
   timeinfo = localtime(&rawtime);

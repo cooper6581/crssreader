@@ -1,1 +1,5 @@
 * Fix a segfault when selecting a specific window at an index
+* Instead of not redrawing while rss feeds are being reloaded, create
+  a temporary rss_feed, load it, then copy it to the rss_window.  Then
+  we would only not be redrawing during the copy, which should be
+  pretty darn fast.

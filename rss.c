@@ -15,7 +15,9 @@
 #include "window.h"
 
 // globals
-pthread_mutex_t rmutex;
+pthread_mutex_t rfmutex;
+pthread_t free_rf_thread;
+pthread_attr_t attr;
 
 // globals for proxies
 proxy_config proxies;
@@ -24,7 +26,7 @@ proxy_config proxies;
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data);
 static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password);
 static char * _strip_html(char *s);
-static void _free_items(rss_feed_t *r);
+static void *_free_items(void *user_data);
 static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_channel_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
@@ -36,11 +38,16 @@ static void _startDocument (void *user_data);
 
 
 void init_parser(void) {
-  // supposed to fix my threading issues?
+  //setup the parser and thread vars
   xmlInitParser();
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+  pthread_mutex_init(&rfmutex, NULL);
 }
 
 void cleanup_parser(void) {
+  pthread_attr_destroy(&attr);
+  pthread_mutex_destroy(&rfmutex);
   xmlCleanupParser();
 }
 
@@ -222,12 +229,13 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
 }
 
 // free's the rss item linked list
-static void _free_items(rss_feed_t *r) {
+static void *_free_items(void *user_data) {
   int i = 0;
+  rss_feed_t *r = (rss_feed_t *)user_data;
   rss_item_t *ri;
   rss_item_t *temp;
 
-  pthread_mutex_lock(&rmutex);
+  pthread_mutex_lock(&rfmutex);
 
   if (r != NULL) {
       ri = r->first;
@@ -244,8 +252,8 @@ static void _free_items(rss_feed_t *r) {
           i++;
       }
   }
-  pthread_mutex_unlock(&rmutex);
-  pthread_exit(NULL);
+  pthread_mutex_unlock(&rfmutex);
+  pthread_exit((void*) 0);
 }
 
 // Populates the rss item linked list
@@ -470,7 +478,11 @@ load_feed(char *url, int reload,
   if (reload == TRUE) {
     // Free old articles
     rf = feed;
-    _free_items(rf);
+    // fire off our free items thread, this will block, this is on purpose
+    pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
+    pthread_join(free_rf_thread,NULL);
+    //pthread_detach(free_rf_thread);
+    //_free_items(rf);
   // Here we are going to load the url into memory
     buffer = _load_url(rf->url, auth, username, password);
   } else
@@ -538,8 +550,12 @@ void print_feed(rss_feed_t *r) {
 // public function to cleanup an rss feed
 void free_feed(rss_feed_t *rf) {
     if(rf != NULL){
-        if(rf->first != NULL)
-            _free_items(rf);
+        if(rf->first != NULL) {
+          pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
+          pthread_join(free_rf_thread,NULL);
+          //pthread_detach(free_rf_thread);
+          //_free_items(rf);
+        }
         free(rf);
     }
 }

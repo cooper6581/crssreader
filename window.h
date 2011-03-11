@@ -22,6 +22,9 @@ typedef struct rss_window {
   int auth;
   char *username;
   char *password;
+  // This field will be used to make sure we don't draw articles for
+  // a window that is still being updated
+  int is_loading_feed;
 
 } rss_window_t;
 
