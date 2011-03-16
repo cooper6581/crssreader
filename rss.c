@@ -493,18 +493,24 @@ load_feed(char *url, int reload,
   // XXX: this is ugly!
   if (buffer.errored) {
       alert(buffer.error);
+      if(buffer.memory)
+        free(buffer.memory);
       return NULL;
   }
 
   // do xml parsing
   doc = xmlReadMemory(buffer.memory,buffer.size,"noname.xml",NULL,0);
   if (doc == NULL) {
-    fprintf(stderr,"Unable to parse xml from %s\n",url);
+    alert("Unable to parse XML");
+    //fprintf(stderr,"Unable to parse xml from %s\n",url);
+    if(buffer.memory)
+      free(buffer.memory);
     return NULL;
   }
 
   cur = xmlDocGetRootElement(doc);
 
+  // This shouldn't ever happen
   if (cur == NULL) {
     fprintf(stderr,"empty document\n");
     xmlFreeDoc(doc);

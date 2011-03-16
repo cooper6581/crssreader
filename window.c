@@ -148,7 +148,7 @@ void draw_articles(void) {
 
   ri = rw->r->first;
   if(ri != NULL) {
-    for(int i = 0;ri != NULL;i++,ri=ri->next) {
+  for(int i = 0;ri != NULL;i++,ri=ri->next) {
     // TODO: Make this a function
       if(strlen(ri->title) < rv.x_par) {
         if (i == rv.cursor) {
@@ -233,7 +233,6 @@ void * reload(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
-  rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
   int window_index = 0;
 
@@ -259,18 +258,17 @@ void * reload(void *t) {
     window_index = *(int *)t;
     rw = get_rss_window_at_index(window_index);
   }
-  rf = rw->r;
-  snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
+  snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
   draw_status(tmp_message);
   rw->is_loading_feed = TRUE;
-  load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
+  load_feed(NULL,1,rw->r,rw->auth,rw->username,rw->password);
   rw->is_loading_feed = FALSE;
   // set the updated time of the window
   time(&rawtime);
   timeinfo = localtime(&rawtime);
   strftime(rw->updated,6,"%H:%M",timeinfo);
   rw->timer = rw->auto_refresh;
-  snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
+  snprintf(tmp_message,rv.x_par,"Completed reloading %s",rw->r->title);
   draw_status(tmp_message);
   rv.need_redraw = TRUE;
   rv.is_reloading = FALSE;
@@ -283,7 +281,6 @@ void * reload_all(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
-  rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
 
   if (rv.is_reloading)
@@ -295,18 +292,17 @@ void * reload_all(void *t) {
   for(int i = 0;i<rv.w_amount;i++) {
     rw = get_rss_window_at_index(i);
     // make sure that there isn't another thread messing with rw
-    rf = rw->r;
-    snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
+    snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
     draw_status(tmp_message);
     rw->is_loading_feed = TRUE;
-    load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
+    load_feed(NULL,1,rw->r,rw->auth,rw->username,rw->password);
     rw->is_loading_feed = FALSE;
     // set the updated time of the window
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     strftime(rw->updated,6,"%H:%M",timeinfo);
     rw->timer = rw->auto_refresh;
-    snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
+    snprintf(tmp_message,rv.x_par,"Completed reloading %s",rw->r->title);
     draw_status(tmp_message);
   }
   rv.is_reloading = FALSE;
@@ -320,7 +316,6 @@ void * auto_refresh(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
-  rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
 
   if (rv.is_reloading)
@@ -338,18 +333,17 @@ void * auto_refresh(void *t) {
     // TODO:  Best practices for mutex locking
     // the check for -1 is to make sure we don't update a disabled feed
     if (rw->timer <= 0 && rw->timer != -1) {
-      rf = rw->r;
-      snprintf(tmp_message,rv.x_par,"Reloading %s",rf->title);
+      snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
       draw_status(tmp_message);
       rw->is_loading_feed = TRUE;
-      load_feed(NULL,1,rf,rw->auth,rw->username,rw->password);
+      load_feed(NULL,1,rw->r,rw->auth,rw->username,rw->password);
       rw->is_loading_feed = FALSE;
       // set the updated time of the window
       time(&rawtime);
       timeinfo = localtime(&rawtime);
       strftime(rw->updated,6,"%H:%M",timeinfo);
       rw->timer = rw->auto_refresh;
-      snprintf(tmp_message,rv.x_par,"Completed reloading %s",rf->title);
+      snprintf(tmp_message,rv.x_par,"Completed reloading %s",rw->r->title);
       draw_status(tmp_message);
     }
   }
