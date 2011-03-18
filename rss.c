@@ -242,7 +242,7 @@ static void *_free_items(void *user_data) {
       while(ri != NULL) {
         temp = NULL;
 #ifdef DEBUG
-          printf("Freeing article %02d\n",i);
+          fprintf(stderr,"Freeing article %02d\n",i);
 #endif
           if(ri != NULL) {
             temp = ri->next;
@@ -475,19 +475,11 @@ load_feed(char *url, int reload,
   xmlNodePtr cur;
   struct MemoryStruct buffer;
 
-  if (reload == TRUE) {
-    // Free old articles
-    rf = feed;
-    // fire off our free items thread, this will block, this is on purpose
-    // TODO:  Load to a temporary variable, then copy it over.  Once this is done
-    // we can detach the _free_items thread (although this operation should be SUPER quick
-    // anyway).
-    pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
-    pthread_join(free_rf_thread,NULL);
-  // Here we are going to load the url into memory
-    buffer = _load_url(rf->url, auth, username, password);
-  } else
-    buffer = _load_url(url, auth, username, password);
+  rf = malloc(sizeof(rss_feed_t));
+  assert(rf != NULL);
+  strncpy(rf->url,url,strlen(url)+1);
+
+  buffer = _load_url(url, auth, username, password);
 
   // if an error ocurred during curl shit, exit
   // XXX: this is ugly!
@@ -496,6 +488,11 @@ load_feed(char *url, int reload,
       if(buffer.memory)
         free(buffer.memory);
       return NULL;
+  }
+
+  if (reload == TRUE) {
+    if(feed != NULL)
+      free_feed(feed);
   }
 
   // do xml parsing
@@ -515,12 +512,6 @@ load_feed(char *url, int reload,
     fprintf(stderr,"empty document\n");
     xmlFreeDoc(doc);
     return NULL;
-  }
-
-  if (reload == FALSE) {
-    rf = malloc(sizeof(rss_feed_t));
-    assert(rf != NULL);
-    strncpy(rf->url,url,strlen(url)+1);
   }
 
   // TODO: Not clean

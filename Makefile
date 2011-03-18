@@ -5,7 +5,7 @@ PREFIX=/usr
 TARGET=rssreader
 
 CC=gcc
-CFLAGS=-Wall -std=c99 -pthread
+CFLAGS= -O0 -Wall -std=c99 -pthread
 LIBS=-l xml2 -l curl
 DBGFLAGS=
 LDFLAGS=-L$(PREFIX)/lib

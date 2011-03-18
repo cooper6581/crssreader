@@ -261,7 +261,7 @@ void * reload(void *t) {
   snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
   draw_status(tmp_message);
   rw->is_loading_feed = TRUE;
-  load_feed(NULL,1,rw->r,rw->auth,rw->username,rw->password);
+  rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
   rw->is_loading_feed = FALSE;
   // set the updated time of the window
   time(&rawtime);
@@ -295,7 +295,7 @@ void * reload_all(void *t) {
     snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
     draw_status(tmp_message);
     rw->is_loading_feed = TRUE;
-    load_feed(NULL,1,rw->r,rw->auth,rw->username,rw->password);
+    rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
     rw->is_loading_feed = FALSE;
     // set the updated time of the window
     time(&rawtime);
@@ -336,7 +336,7 @@ void * auto_refresh(void *t) {
       snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
       draw_status(tmp_message);
       rw->is_loading_feed = TRUE;
-      load_feed(NULL,1,rw->r,rw->auth,rw->username,rw->password);
+      rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
       rw->is_loading_feed = FALSE;
       // set the updated time of the window
       time(&rawtime);
