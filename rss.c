@@ -1,14 +1,17 @@
+#ifdef LINUX
+#include <strings.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include <curl/curl.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/HTMLparser.h>
 #include <libxml/parser.h>
 #include <assert.h>
-
 #include <pthread.h>
+
 
 #include "common.h"
 #include "rss.h"

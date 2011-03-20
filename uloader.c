@@ -1,3 +1,8 @@
+#ifdef LINUX
+#define _GNU_SOURCE
+#include <strings.h>
+#endif
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
