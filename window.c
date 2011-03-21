@@ -334,6 +334,9 @@ void * auto_refresh(void *t) {
     // the check for -1 is to make sure we don't update a disabled feed
     if (rw->timer <= 0 && rw->timer != -1) {
       snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
+#ifdef DEBUG
+      fprintf(stderr,"firing thread for %s\n",rw->r->title);
+#endif
       draw_status(tmp_message);
       rw->is_loading_feed = TRUE;
       // Needed to be moved here to avoid threads being
@@ -474,7 +477,7 @@ void check_time(void) {
     for(int i = 0; i < rv.w_amount; i++) {
       rw = get_rss_window_at_index(i);
       // make sure the timer is enabled before dec
-      // also make sure we don't accidentaly diable a real timer
+      // also make sure we don't accidentaly disable a real timer
       if(rw->timer != -1 && rw->timer != 0)
         rw->timer--;
       temp_time = current_time;
@@ -486,9 +489,17 @@ void check_time(void) {
   // There is at least one timer that has expired.  Fire off a thread
   // using the auto_refresh callback
   if(a_timer_is_hit) {
-    pthread_t thread;
-    pthread_create(&thread, NULL, auto_refresh, NULL);
-    pthread_detach(thread);
+    // Just for debugging...
+    for(int i = 0; i < rv.w_amount; i++) {
+      rw = get_rss_window_at_index(i);
+      if (rw->is_loading_feed == FALSE && 
+	  rw->timer != -1 && 
+	  (rw->timer == 0 || rw->timer < -1)) {
+	pthread_t thread;
+	pthread_create(&thread, NULL, auto_refresh, NULL);
+	pthread_detach(thread);
+      }
+    }
   }
 }
 
