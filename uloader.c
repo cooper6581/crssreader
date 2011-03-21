@@ -34,7 +34,7 @@ static int get_line(char *line_buffer, int buffer_size) {
   prev_line = b_index;
   while(b_index < fsize) {
     // copy to our line buffer if we don't have a new line
-    while(buffer[b_index] != '\n') {
+    while(buffer[b_index] != '\n' && buffer[b_index] != EOF) {
       // check for overflow
       if (j < buffer_size)
         line_buffer[j++] = buffer[b_index++];

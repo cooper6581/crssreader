@@ -29,7 +29,7 @@ proxy_config proxies;
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data);
 static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password);
 static char * _strip_html(char *s);
-static void *_free_items(void *user_data);
+static void _free_items(rss_feed_t *rf);
 static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
 static void _parse_channel_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur);
@@ -232,13 +232,10 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
 }
 
 // free's the rss item linked list
-static void *_free_items(void *user_data) {
+static void _free_items(rss_feed_t *r) {
   int i = 0;
-  rss_feed_t *r = (rss_feed_t *)user_data;
   rss_item_t *ri;
   rss_item_t *temp;
-
-  pthread_mutex_lock(&rfmutex);
 
   if (r != NULL) {
       ri = r->first;
@@ -255,8 +252,6 @@ static void *_free_items(void *user_data) {
           i++;
       }
   }
-  pthread_mutex_unlock(&rfmutex);
-  pthread_exit((void*) 0);
 }
 
 // Populates the rss item linked list
@@ -552,10 +547,10 @@ void print_feed(rss_feed_t *r) {
 void free_feed(rss_feed_t *rf) {
     if(rf != NULL){
         if(rf->first != NULL) {
-          pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
-          pthread_join(free_rf_thread,NULL);
+          //pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
+          //pthread_join(free_rf_thread,NULL);
           //pthread_detach(free_rf_thread);
-          //_free_items(rf);
+          _free_items(rf);
         }
         free(rf);
     }

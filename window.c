@@ -318,11 +318,11 @@ void * auto_refresh(void *t) {
   char tmp_message[rv.x_par];
   rss_window_t *rw = NULL;
 
-  if (rv.is_reloading)
-    pthread_exit(NULL);
+  //if (rv.is_reloading)
+  //  pthread_exit(NULL);
 
   pthread_mutex_lock(&rmutex);
-  rv.is_reloading = TRUE;
+  //rv.is_reloading = TRUE;
 
   memset(tmp_message,0,rv.x_par);
   // cycle through each of the rss windows to see which ones
@@ -336,18 +336,22 @@ void * auto_refresh(void *t) {
       snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
       draw_status(tmp_message);
       rw->is_loading_feed = TRUE;
+      // Needed to be moved here to avoid threads being
+      // created non-stop until load_feed was completed
+      // TODO:  Create a queuing system (not sure which 
+      // lifetime I will find the time to do that...)
+      rw->timer = rw->auto_refresh;
       rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
       rw->is_loading_feed = FALSE;
       // set the updated time of the window
       time(&rawtime);
       timeinfo = localtime(&rawtime);
       strftime(rw->updated,6,"%H:%M",timeinfo);
-      rw->timer = rw->auto_refresh;
       snprintf(tmp_message,rv.x_par,"Completed reloading %s",rw->r->title);
       draw_status(tmp_message);
     }
   }
-  rv.is_reloading = FALSE;
+  //rv.is_reloading = FALSE;
   rv.need_redraw = TRUE;
   pthread_mutex_unlock(&rmutex);
   pthread_exit(NULL);
