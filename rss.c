@@ -128,7 +128,7 @@ static char * _strip_html(char *s) {
 
 #ifdef DEBUG
   if (mem_base != xmlMemBlocks()) {
-    printf("Leak of %d blocks found in htmlSAXParseDoc",
+    fprintf(stderr,"Leak of %d blocks found in htmlSAXParseDoc",
       xmlMemBlocks() - mem_base);
   }
 #endif
@@ -222,7 +222,7 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
    * you're done with it, you should free() it as a nice application.
    */
 #ifdef DEBUG
-  printf("%lu bytes retrieved\n", (long)chunk.size);
+  fprintf(stderr,"%lu bytes retrieved\n", (long)chunk.size);
 #endif
 
   /* we're done with libcurl, so clean it up */

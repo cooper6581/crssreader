@@ -113,7 +113,7 @@ void cleanup_view(void) {
     temp = rw->next;
     free_feed(rw->r);
 #ifdef DEBUG
-    printf("Freeing window %d\n",w++);
+    fprintf(stderr,"Freeing window %d\n",w++);
 #endif
     if(rw->auth == TRUE) {
       if(rw->username != NULL)
@@ -318,11 +318,7 @@ void * auto_refresh(void *t) {
   char tmp_message[rv.x_par];
   rss_window_t *rw = NULL;
 
-  //if (rv.is_reloading)
-  //  pthread_exit(NULL);
-
   pthread_mutex_lock(&rmutex);
-  //rv.is_reloading = TRUE;
 
   memset(tmp_message,0,rv.x_par);
   // cycle through each of the rss windows to see which ones
@@ -335,17 +331,16 @@ void * auto_refresh(void *t) {
     if (rw->timer <= 0 && rw->timer != -1) {
       snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
 #ifdef DEBUG
-      fprintf(stderr,"firing thread for %s\n",rw->r->title);
+      char tmpstamp[8];
+      time(&rawtime);
+      timeinfo = localtime(&rawtime);
+      strftime(tmpstamp,6,"%H:%M",timeinfo);
+      fprintf(stderr,"[%s] - firing thread for %s\n",tmpstamp,rw->r->title);
 #endif
       draw_status(tmp_message);
-      rw->is_loading_feed = TRUE;
-      // Needed to be moved here to avoid threads being
-      // created non-stop until load_feed was completed
-      // TODO:  Create a queuing system (not sure which 
-      // lifetime I will find the time to do that...)
-      rw->timer = rw->auto_refresh;
       rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
       rw->is_loading_feed = FALSE;
+      rw->timer = rw->auto_refresh;
       // set the updated time of the window
       time(&rawtime);
       timeinfo = localtime(&rawtime);
@@ -354,7 +349,6 @@ void * auto_refresh(void *t) {
       draw_status(tmp_message);
     }
   }
-  //rv.is_reloading = FALSE;
   rv.need_redraw = TRUE;
   pthread_mutex_unlock(&rmutex);
   pthread_exit(NULL);
@@ -471,7 +465,6 @@ void check_time(void) {
   time_t current_time;
   rss_window_t *rw;
   current_time = time(NULL);
-  int a_timer_is_hit = FALSE;
   if (current_time > temp_time) {
     // cycle through all of our rss windows, and dec the timers
     for(int i = 0; i < rv.w_amount; i++) {
@@ -481,23 +474,18 @@ void check_time(void) {
       if(rw->timer != -1 && rw->timer != 0)
         rw->timer--;
       temp_time = current_time;
-      // lets make note if one of the timers has expired
-      if(rw->timer == 0)
-        a_timer_is_hit = TRUE;
-    }
-  }
-  // There is at least one timer that has expired.  Fire off a thread
-  // using the auto_refresh callback
-  if(a_timer_is_hit) {
-    // Just for debugging...
-    for(int i = 0; i < rv.w_amount; i++) {
-      rw = get_rss_window_at_index(i);
-      if (rw->is_loading_feed == FALSE && 
-	  rw->timer != -1 && 
-	  (rw->timer == 0 || rw->timer < -1)) {
-	pthread_t thread;
-	pthread_create(&thread, NULL, auto_refresh, NULL);
-	pthread_detach(thread);
+      // Launch a thread to refresh if one of the timers expired
+      // this also is what keeps our threads sane.  check_time
+      // will set is_loading_feed to TRUE, the thread will set it
+      // to FALSE after it has reloaded the feed.
+      if(rw->timer == 0) {
+	if(rw->is_loading_feed == FALSE) {
+	  fprintf(stderr,"check_time: Firing %s\n",rw->r->title);
+	  rw->is_loading_feed = TRUE;
+	  pthread_t thread;
+	  pthread_create(&thread, NULL, auto_refresh, NULL);
+	  pthread_detach(thread);
+	}
       }
     }
   }
