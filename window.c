@@ -480,7 +480,6 @@ void check_time(void) {
       // to FALSE after it has reloaded the feed.
       if(rw->timer == 0) {
 	if(rw->is_loading_feed == FALSE) {
-	  fprintf(stderr,"check_time: Firing %s\n",rw->r->title);
 	  rw->is_loading_feed = TRUE;
 	  pthread_t thread;
 	  pthread_create(&thread, NULL, auto_refresh, NULL);
