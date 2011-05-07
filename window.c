@@ -140,6 +140,10 @@ void draw_articles(void) {
 
   if (rv.cursor < 0)
     rv.cursor = 0;
+
+  if (rw->r == NULL)
+      return;
+
   if (rv.cursor >= rw->r->articles)
     rv.cursor = rw->r->articles-1;
 
@@ -462,32 +466,34 @@ void yank(void) {
 
 // Function used to decrease the timers for each rss_window
 void check_time(void) {
-  time_t current_time;
-  rss_window_t *rw;
-  current_time = time(NULL);
-  if (current_time > temp_time) {
-    // cycle through all of our rss windows, and dec the timers
-    for(int i = 0; i < rv.w_amount; i++) {
-      rw = get_rss_window_at_index(i);
-      // make sure the timer is enabled before dec
-      // also make sure we don't accidentaly disable a real timer
-      if(rw->timer != -1 && rw->timer != 0)
-        rw->timer--;
-      temp_time = current_time;
-      // Launch a thread to refresh if one of the timers expired
-      // this also is what keeps our threads sane.  check_time
-      // will set is_loading_feed to TRUE, the thread will set it
-      // to FALSE after it has reloaded the feed.
-      if(rw->timer == 0) {
-	if(rw->is_loading_feed == FALSE) {
-	  rw->is_loading_feed = TRUE;
-	  pthread_t thread;
-	  pthread_create(&thread, NULL, auto_refresh, NULL);
-	  pthread_detach(thread);
-	}
-      }
+    time_t current_time;
+    rss_window_t *rw;
+    current_time = time(NULL);
+    if (current_time > temp_time) {
+        // cycle through all of our rss windows, and dec the timers
+        for(int i = 0; i < rv.w_amount; i++) {
+            rw = get_rss_window_at_index(i);
+            // make sure the timer is enabled before dec
+            // also make sure we don't accidentaly disable a real timer
+            if(rw->timer != -1 && rw->timer != 0)
+                rw->timer--;
+            temp_time = current_time;
+            // Launch a thread to refresh if one of the timers expired
+            // this also is what keeps our threads sane.  check_time
+            // will set is_loading_feed to TRUE, the thread will set it
+            // to FALSE after it has reloaded the feed.
+            if(rw->timer == 0) {
+                if(rw->is_loading_feed == FALSE) {
+                    pthread_t thread;
+                    if (pthread_create(&thread, NULL, auto_refresh, NULL))
+                        // detach if we were unable to create.
+                        pthread_detach(thread);
+                    else
+                        rw->is_loading_feed = TRUE;
+                }
+            }
+        }
     }
-  }
 }
 
 void alert(const char *msg) {
