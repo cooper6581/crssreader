@@ -431,7 +431,7 @@ rss_window_t * get_current_rss_window(void) {
   rss_window_t *rw = NULL;
   rw = rv.rw_first;
   for(int i = 0; i < rv.windex && rw != NULL;i++)
-    rw = rw->next;
+      rw = rw->next;
   return rw;
 }
 
@@ -452,16 +452,18 @@ void yank(void) {
   rss_window_t *rw;
 
   rw = get_current_rss_window();
-  rss_item_t *ri = NULL;
-  ri = get_item(rw->r,rv.cursor);
+  if (rw != NULL) {
+      rss_item_t *ri = NULL;
+      ri = get_item(rw->r,rv.cursor);
 #ifdef OSX
-  char command[1024];
-  snprintf(command,1024,"echo \"%s\" | pbcopy",ri->link);
-  system(command);
+      char command[1024];
+      snprintf(command,1024,"echo \"%s\" | pbcopy",ri->link);
+      system(command);
 #endif
 #ifdef LINUX
-  draw_status("Not implemented");
+      draw_status("Not implemented");
 #endif
+  }
 }
 
 // Function used to decrease the timers for each rss_window
