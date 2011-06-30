@@ -5,10 +5,12 @@
 #define LINE_MAX 1024
 #define AUTH_MAX 32
 
+// These should probably be an ENUM?
 #define UL_KEY_URL 1
 #define UL_KEY_AUTH 2
 #define UL_KEY_REFRESH 3
 #define UL_KEY_PROXY 4
+#define UL_KEY_NTLM 5
 
 struct entry {
   char url[URL_MAX];

@@ -194,6 +194,15 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
     curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login);
   }
 
+  // NTLM Auth
+  // XXX:  check for errors here as well!
+  if(auth == NTLM) {
+    char login[512];
+    snprintf(login,512,"%s:%s",username,password);
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
+    curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login);
+  }
+
   /* setup proxy */
   if (proxies.http != NULL)
       if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_PROXY, proxies.http)) != 0) {

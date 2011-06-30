@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
   assert(init_view());
 
   while(e != NULL) {
-    if(e->auth == TRUE)
+    if(e->auth != FALSE)
       add_feed(e->url,e->refresh,e->auth,e->username,e->password);
     else
       add_feed(e->url,e->refresh,e->auth,NULL,NULL);

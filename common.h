@@ -3,6 +3,7 @@
 
 #define TRUE 1
 #define FALSE 0
+#define NTLM 2
 
 #define RC_NAME ".rssreaderrc"
 

@@ -75,6 +75,8 @@ static int get_key(char *line_buffer, char *value, int buffer_size) {
       status = UL_KEY_URL;
     else if (strncasecmp(key,"auth",LINE_MAX) == 0)
       status = UL_KEY_AUTH;
+    else if (strncasecmp(key,"ntlm",LINE_MAX) == 0)
+      status = UL_KEY_NTLM;
     else if (strncasecmp(key,"refresh",LINE_MAX) == 0)
       status = UL_KEY_REFRESH;
     else if (strncasecmp(key,"http_proxy",LINE_MAX) == 0)
@@ -131,6 +133,14 @@ static struct entries * parse_file(char *b, int fsize) {
     } else if (get_key(line_buffer,value,LINE_MAX) == UL_KEY_AUTH && in_url == TRUE) {
       et->auth = TRUE;
       printf("Please enter login credentials for %s\n",et->url);
+      printf("Username: ");
+      scanf("%s",input_buffer);
+      strncpy(et->username,input_buffer,AUTH_MAX);
+      password = getpass("Password: ");
+      strncpy(et->password,password,AUTH_MAX);
+    } else if (get_key(line_buffer,value,LINE_MAX) == UL_KEY_NTLM && in_url == TRUE) {
+      et->auth = 2;
+      printf("Please enter NTLM login credentials for %s\n",et->url);
       printf("Username: ");
       scanf("%s",input_buffer);
       strncpy(et->username,input_buffer,AUTH_MAX);
