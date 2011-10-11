@@ -1,4 +1,4 @@
-dist ?= OSX
+dist ?= LINUX
 debug ?= 1
 
 PREFIX=/usr
