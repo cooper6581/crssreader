@@ -490,18 +490,19 @@ void check_time(void) {
                     pthread_t thread;
                     int error_no;
                     error_no = pthread_create(&thread, NULL, auto_refresh, NULL);
-                    if (error_no == EAGAIN)
-                      // try again
-                      error_no = pthread_create(&thread, NULL, auto_refresh, NULL);
-                    if (error_no) {
+                    if (error_no && error_no != EAGAIN) {
                         // detach if we were unable to create.
                         //pthread_detach(thread);
                         fprintf(stderr,"pthread_create returned %s\n",strerror(error_no));
                         exit(EXIT_FAILURE);
                     }
-                    //else
-                    // Assuming if we got here, the thread was created
-                    rw->is_loading_feed = TRUE;
+                    // We were able to launch a thread, remember to detach...
+                    if (error_no != EAGAIN) {
+                      pthread_detach(thread);
+                      rw->is_loading_feed = TRUE;
+                    }
+                    else
+                      fprintf(stderr,"Unable to launch thread, trying again\n");
                 }
             }
         }
