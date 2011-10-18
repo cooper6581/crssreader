@@ -41,17 +41,22 @@ static void _startDocument (void *user_data);
 
 
 void init_parser(void) {
+  int rcode;
   //setup the parser and thread vars
   xmlInitParser();
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
   pthread_mutex_init(&rfmutex, NULL);
+  if ((rcode = curl_global_init(CURL_GLOBAL_ALL)) != 0)
+    fprintf(stderr, "Couldn't do global curl initialization.\nError code: %d\n", rcode);
 }
 
 void cleanup_parser(void) {
   pthread_attr_destroy(&attr);
   pthread_mutex_destroy(&rfmutex);
   xmlCleanupParser();
+  /* we're done with libcurl, so clean it up */
+  curl_global_cleanup();
 }
 
 // Callback used by libcurl
@@ -149,11 +154,6 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
   chunk.errored = 0;
   snprintf(chunk.error, CHARMAX_ERR, "Free of errors.");
 
-  if ((rcode = curl_global_init(CURL_GLOBAL_ALL)) != 0) {
-      snprintf(chunk.error, CHARMAX_ERR, "Couldn't do global curl initialization for %s.\nError code: %d\n", url, rcode);
-      chunk.errored = 1;
-      return chunk;
-  }
   /* init the curl session */
   if ((curl_handle = curl_easy_init()) == NULL) {
       snprintf(chunk.error, CHARMAX_ERR, "Couldn't init curl session for %s.\n", url);
@@ -233,9 +233,6 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
 #ifdef DEBUG
   fprintf(stderr,"%lu bytes retrieved\n", (long)chunk.size);
 #endif
-
-  /* we're done with libcurl, so clean it up */
-  curl_global_cleanup();
 
   return chunk;
 }

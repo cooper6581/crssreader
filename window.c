@@ -60,7 +60,8 @@ int add_feed(char *url, const int autorefresh, const int auth, char *username, c
 
   char msg[rv.x_par];
   snprintf(msg,rv.x_par,"Loading: %s",url);
-  draw_status(msg);
+  if(msg != NULL)
+    draw_status(msg);
   rf = load_feed(url,0,NULL,auth,username,password);
 
   if (rf == NULL) {
@@ -221,12 +222,12 @@ void draw_titles(void) {
 }
 
 static char * _pad_message(const char *msg) {
-  char *padded = NULL;
+  char *padded;
   int size_of_msg = 0;
-  padded = malloc(sizeof(char) * rv.x_par);
+  padded = malloc(sizeof(char) * rv.x_par + 1);
   assert (padded != NULL);
   size_of_msg = (int) strlen(msg);
-  strncpy(padded,msg,rv.x_par);
+  strncpy(padded,msg,rv.x_par + 1);
   for(int i=size_of_msg;i<rv.x_par;i++)
     padded[i] = ' ';
 
