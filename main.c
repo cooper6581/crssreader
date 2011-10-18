@@ -189,5 +189,5 @@ int main(int argc, char **argv) {
   endwin();
   cleanup_view();
   cleanup_parser();
-  return 0;
+  pthread_exit(NULL);
 }
