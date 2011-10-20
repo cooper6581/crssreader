@@ -241,6 +241,7 @@ void * reload(void *t) {
   char tmp_message[rv.x_par];
   rss_window_t *rw = NULL;
   int window_index = 0;
+  rss_feed_t *result;
 
   if (rv.is_reloading) {
     draw_status("rv.is_reloading set to true, exiting");
@@ -267,8 +268,18 @@ void * reload(void *t) {
   snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
   draw_status(tmp_message);
   rw->is_loading_feed = TRUE;
-  rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
+  result = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
   rw->is_loading_feed = FALSE;
+  // Need to see if load_feed failed so that we don't overwrite
+  // the feed's URL info in the event load_feed returns NULL
+  if (result == NULL) {
+    // Unlock the mutex, and pretend nothing ever happened
+    rv.is_reloading = FALSE;
+    pthread_mutex_unlock(&rmutex);
+    pthread_exit(NULL);
+  }
+  // load_feed should have succeded
+  rw->r = result;
   // set the updated time of the window
   time(&rawtime);
   timeinfo = localtime(&rawtime);
@@ -288,6 +299,7 @@ void * reload_all(void *t) {
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
   rss_window_t *rw = NULL;
+  rss_feed_t *result;
 
   if (rv.is_reloading)
     pthread_exit(NULL);
@@ -301,8 +313,15 @@ void * reload_all(void *t) {
     snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
     draw_status(tmp_message);
     rw->is_loading_feed = TRUE;
-    rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
+    result = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
     rw->is_loading_feed = FALSE;
+    if (result == NULL) {
+      // Let's try again at the default auto_refresh
+      rw->timer = rw->auto_refresh;
+      continue;
+    }
+    // load_feed should have completed
+    rw->r = result;
     // set the updated time of the window
     time(&rawtime);
     timeinfo = localtime(&rawtime);
