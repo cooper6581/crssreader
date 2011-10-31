@@ -3,3 +3,4 @@
   a temporary rss_feed, load it, then copy it to the rss_window.  Then
   we would only not be redrawing during the copy, which should be
   pretty darn fast.
+* test comment to see if git is working at it's new location
