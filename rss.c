@@ -186,21 +186,35 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
       return chunk;
   }
   // Gmail part
-  // XXX: check for errors here!
   if(auth == TRUE) {
     char login[512];
-    snprintf(login,512,"%s:%s",username,password);
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-    curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login);
+    snprintf(login, 512, "%s:%s", username, password);
+    if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC)) != 0) {
+        snprintf(chunk.error, CHARMAX_ERR, "Couldn't setopt CURLOPT_HTTPAUTH to CURLAUTH_BASIC.\nError code: %d", rcode);
+        chunk.errored = 1;
+        return chunk;
+    }
+    if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login)) != 0) {
+        snprintf(chunk.error, CHARMAX_ERR, "Couldn't setopt CURLOPT_USERPWD.\nError code: %d", rcode);
+        chunk.errored = 1;
+        return chunk;
+    }
   }
 
   // NTLM Auth
-  // XXX:  check for errors here as well!
   if(auth == NTLM) {
     char login[512];
-    snprintf(login,512,"%s:%s",username,password);
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
-    curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login);
+    snprintf(login, 512, "%s:%s", username,password);
+    if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_NTLM)) != 0) {
+        snprintf(chunk.error, CHARMAX_ERR, "Couldn't setopt CURLOPT_HTTPAUTH to CURLAUTH_NTLM.\nError code: %d", rcode);
+        chunk.errored = 1;
+        return chunk;
+    }
+    if ((rcode = curl_easy_setopt(curl_handle, CURLOPT_USERPWD, login)) != 0) {
+        snprintf(chunk.error, CHARMAX_ERR, "Couldn't setopt CURLOPT_USERPWD.\nError code: %d", rcode);
+        chunk.errored = 1;
+        return chunk;
+    }
   }
 
   /* setup proxy */
