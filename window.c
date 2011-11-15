@@ -413,10 +413,10 @@ void select_article(void) {
 
   char command[1024];
   rss_item_t *ri = NULL;
-  ri = get_item(rw->r,rv.cursor);
-  snprintf(command,1024,"open \"%s\"",ri->link);
+  ri = get_item(rw->r, rv.cursor);
+  snprintf(command, 1024, "open \"%s\"", ri->link);
 #ifdef LINUX
-  snprintf(command,1024,"xdg-open \"%s\"  2>&1 > /dev/null",ri->link);
+  snprintf(command, 1024, "xdg-open \"%s\"  2>&1 > /dev/null", ri->link);
 #endif
   system(command);
 }
