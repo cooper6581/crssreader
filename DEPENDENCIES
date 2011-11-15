@@ -1,0 +1,7 @@
+BUILD:
+ - libxml2
+ - curl
+ - ncursesw
+
+RUN:
+ - xdg-open
