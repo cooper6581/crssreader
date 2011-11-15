@@ -1,7 +1,12 @@
+#include <sys/param.h>
+
 #include <assert.h>
 #include <locale.h>
 #include <pthread.h>
+#include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <pwd.h>
 #include "curses.h"
 #include "rss.h"
 #include "window.h"
@@ -28,8 +33,12 @@ int main(int argc, char **argv) {
   struct entries *et;
   struct entry *e;
   pthread_t rthread;
+  uid_t uid;
+  struct passwd *pwd;
   // Will be cleaned when the input handler is moved outside of main
   int hit_g = 0;
+  int tmp;
+  char tmp_path[MAXPATHLEN];
 
   assert(argc <= 2);
   /*
@@ -42,32 +51,32 @@ int main(int argc, char **argv) {
     return help(argv[0]);
 
   setlocale(LC_ALL, "");
-  init_parser();
   if (argc == 1) {
-    /*
-      TODO: fix this shit. string manipulation like this is so
-      dangerous it makes me want to punch people.
-    */
-    const char *home_path = getenv("HOME");
-    assert(home_path != NULL);
-    if (home_path != NULL) {
-      /* is 64 enough for home folders? Probably not!
-	 (I hate string manipulation in C)
+      /*
+         HOME may be set to something dangerous. Best to get the path
+         for the user home from the passwd record.
       */
-      char tmp_path[64];
-      int sz = snprintf(tmp_path, 64, "%s/%s", home_path, def_cfg_fname);
-      assert(sz < 64);
-      et = load_entries(tmp_path);
-    }
-    else {
-      printf("Could not load %s from the user home folder.\n", def_cfg_fname);
-      return -1;
-    }
+      uid = getuid();
+      if (!(pwd = getpwuid(uid))) {
+          printf("Unable to get user's record.\n");
+          endpwent();
+          return 1;
+      }
+      tmp = snprintf(tmp_path, sizeof(tmp_path), "%s/%s", pwd->pw_dir, def_cfg_fname);
+      if (tmp == MAXPATHLEN) {
+          printf("Path was truncated. Not sure what to do. Exiting.");
+          return -1;
+      }
+      endpwent();
+  } else {
+      if (strncpy(tmp_path, argv[1], MAXPATHLEN)) {
+          printf("Path was truncated. Not sure what to do. Exiting.");
+          return -1;
+      }
   }
-  else {
-    /* Load from the file passed as argument. */
-    et = load_entries(argv[1]);
-  }
+
+  init_parser();
+  et = load_entries(tmp_path);
   e = et->head;
   assert(init_view());
 
