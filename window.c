@@ -422,7 +422,7 @@ void select_article(void) {
 # endif
   system(command);
 #else
-  printf("If you want this functionality, you will need to compile with WITH_X=1.");
+  alert("If you want this functionality, you will need to compile with WITH_X=1.");
 #endif
 }
 
@@ -490,6 +490,8 @@ void yank(void) {
       char command[1024];
       snprintf(command, 1024, "echo \"%s\" | xclip", ri->link);
       system(command);
+#else
+      alert("If you want this functionality, you will need to compile with WITH_X=1.");
 #endif
   }
 }
