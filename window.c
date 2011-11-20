@@ -414,11 +414,16 @@ void select_article(void) {
   char command[1024];
   rss_item_t *ri = NULL;
   ri = get_item(rw->r, rv.cursor);
-  snprintf(command, 1024, "open \"%s\"", ri->link);
-#ifdef LINUX
+#ifdef WITH_X
+# ifdef LINUX
   snprintf(command, 1024, "xdg-open \"%s\"  2>&1 > /dev/null", ri->link);
-#endif
+# else
+  snprintf(command, 1024, "open \"%s\"", ri->link);
+# endif
   system(command);
+#else
+  printf("If you want this functionality, you will need to compile with WITH_X=1.");
+#endif
 }
 
 void show_article(void) {
@@ -481,8 +486,10 @@ void yank(void) {
       snprintf(command,1024,"echo \"%s\" | pbcopy",ri->link);
       system(command);
 #endif
-#ifdef LINUX
-      draw_status("Not implemented");
+#if defined(LINUX) && defined(WITH_X)
+      char command[1024];
+      snprintf(command, 1024, "echo \"%s\" | xclip", ri->link);
+      system(command);
 #endif
   }
 }
@@ -532,8 +539,6 @@ void check_time(void) {
 void alert(const char *msg) {
   WINDOW *w_alert = NULL;
   WINDOW *w_alert_text = NULL;
-  int length = 0;
-  length = strlen(msg);
   w_alert = newwin(rv.y_par / 3, rv.x_par / 2, rv.y_par / 3, rv.x_par / 4);
   w_alert_text = subwin(w_alert, (rv.y_par / 3) - 2, (rv.x_par / 2) - 2, (rv.y_par / 3) + 1, (rv.x_par / 4) + 1);
   assert(w_alert || w_alert_text != NULL);
@@ -559,10 +564,8 @@ void alert(const char *msg) {
 void content(const char *msg) {
   WINDOW *w_alert = NULL;
   WINDOW *w_alert_text = NULL;
-  int length = 0;
   int content_y = rv.y_par -8;
   int content_x = rv.x_par -8;
-  length = strlen(msg);
   w_alert = newwin(content_y, content_x, 4, 4);
   w_alert_text = subwin(w_alert, content_y - 3,  content_x - 4, 5, 6);
   assert(w_alert || w_alert_text != NULL);
