@@ -3,5 +3,6 @@ BUILD:
  - curl
  - ncursesw
 
-RUN:
- - xdg-open
+RUN (optional):
+ - xdg-open (open link in browser)
+ - xclip (copy selection to clipboard)
