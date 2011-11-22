@@ -60,6 +60,7 @@ typedef struct rss_view {
 } rss_view_t;
 
 int init_view(void);
+int reinit_view(void);
 int add_feed(char *url, const int autorefresh, const int auth, char *username, char *password);
 void draw_articles(void);
 void draw_titles(void);

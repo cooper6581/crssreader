@@ -24,6 +24,7 @@ rss_view_t rv;
 
 // This file contains public and private functions for the GUI
 int init_view(void) {
+  use_env(TRUE);
   rv.rw_first = NULL;
   rv.cursor = 0;
   rv.windex = 0;
@@ -47,6 +48,39 @@ int init_view(void) {
   rv.title_viewing = TRUE;
   // setup our mutex
   pthread_mutex_init(&rmutex,NULL);
+
+  return 14;
+}
+
+int reinit_view(void) {
+  /*
+  rv.rw_first = NULL;
+  rv.cursor = 0;
+  rv.windex = 0;
+  rv.w_amount = 0;
+  rv.w_par = initscr();
+  assert(rv.w_par != NULL);
+  raw();
+  noecho();
+  halfdelay(10);
+  use_default_colors();
+  // This will probably fail in OSX
+  curs_set(0);
+  */
+  getmaxyx(rv.w_par, rv.y_par, rv.x_par);
+  fprintf(stderr,"x: %d y: %d\n", rv.x_par, rv.y_par);
+  resizeterm(rv.y_par, rv.x_par);
+  //rv.y_view = 0;
+  delwin(rv.w_articles);
+  delwin(rv.w_titles);
+  rv.w_articles = newpad(PADLINES,rv.x_par);
+  rv.w_titles = newpad(PADLINES,rv.x_par);
+  assert(rv.w_articles != NULL);
+  assert(rv.w_titles != NULL);
+  resizeterm(rv.y_par, rv.x_par);
+  rv.need_redraw = TRUE;
+  rv.is_reloading = FALSE;
+  //rv.title_viewing = TRUE;
 
   return 14;
 }

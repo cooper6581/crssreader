@@ -22,6 +22,9 @@ const char *version = "0.0.1";
 // our global rss_view
 extern rss_view_t rv;
 
+// global window resized
+int need_resize = FALSE;
+
 int help(const char *prog_name) {
   printf("Usage %s [FILE]\n"
   "Try `man %s` for more information.\n",
@@ -96,26 +99,36 @@ int main(int argc, char **argv) {
 
   // Main loop
   for(;;) {
-      if(rv.need_redraw) {
-          if (rv.title_viewing) {
-              wclear(rv.w_titles);
-              refresh();
-              wrefresh(rv.w_titles);
-              draw_titles();
-              rv.need_redraw = FALSE;
-          }
-          else {
-              wclear(rv.w_articles);
-              refresh();
-              wrefresh(rv.w_articles);
-              draw_articles();
-              rv.need_redraw = FALSE;
-          }
-      }
-    rv.c = getch();
+    // Check for resize
+    if(need_resize == TRUE) {
+        need_resize = FALSE;
+        assert(reinit_view());
+    }
+    if(rv.need_redraw) {
+        if (rv.title_viewing) {
+            wclear(rv.w_titles);
+            refresh();
+            wrefresh(rv.w_titles);
+            draw_titles();
+            rv.need_redraw = FALSE;
+        }
+        else {
+            wclear(rv.w_articles);
+            refresh();
+            wrefresh(rv.w_articles);
+            draw_articles();
+            rv.need_redraw = FALSE;
+        }
+    }
+    rv.c = wgetch(rv.w_par);
     check_time();
+    // check resize
+    if(rv.c == KEY_RESIZE || rv.c == ERR) {
+        fprintf(stderr,"HI!!\n");
+        need_resize = TRUE;
+    }
     // quit
-    if(rv.c == 'q')
+    else if(rv.c == 'q')
       break;
     // escape clears our g counter
     else if (rv.c == 0x1B)
