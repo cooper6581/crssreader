@@ -74,12 +74,6 @@ int main(int argc, char **argv) {
           return -1;
       }
   }
-  // setup the env 
-  // ghetto hack test
-  char termt[512];
-  strncpy(termt, getenv("TERM"), 512);
-  clearenv();
-  setenv("TERM", termt, 1);
 
   init_parser();
   et = load_entries(tmp_path);
