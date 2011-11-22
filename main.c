@@ -123,10 +123,8 @@ int main(int argc, char **argv) {
     rv.c = wgetch(rv.w_par);
     check_time();
     // check resize
-    if(rv.c == KEY_RESIZE || rv.c == ERR) {
-        fprintf(stderr,"HI!!\n");
+    if(rv.c == KEY_RESIZE || rv.c == ERR)
         need_resize = TRUE;
-    }
     // quit
     else if(rv.c == 'q')
       break;
