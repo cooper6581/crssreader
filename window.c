@@ -24,7 +24,6 @@ rss_view_t rv;
 
 // This file contains public and private functions for the GUI
 int init_view(void) {
-  use_env(TRUE);
   rv.rw_first = NULL;
   rv.cursor = 0;
   rv.windex = 0;

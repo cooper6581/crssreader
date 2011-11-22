@@ -22,9 +22,6 @@ const char *version = "0.0.1";
 // our global rss_view
 extern rss_view_t rv;
 
-// global window resized
-int need_resize = FALSE;
-
 int help(const char *prog_name) {
   printf("Usage %s [FILE]\n"
   "Try `man %s` for more information.\n",
@@ -77,6 +74,12 @@ int main(int argc, char **argv) {
           return -1;
       }
   }
+  // setup the env 
+  // ghetto hack test
+  char termt[512];
+  strncpy(termt, getenv("TERM"), 512);
+  clearenv();
+  setenv("TERM", termt, 1);
 
   init_parser();
   et = load_entries(tmp_path);
@@ -100,10 +103,9 @@ int main(int argc, char **argv) {
   // Main loop
   for(;;) {
     // Check for resize
-    if(need_resize == TRUE) {
-        need_resize = FALSE;
+    if(is_term_resized(rv.y_par, rv.x_par) == TRUE)
         assert(reinit_view());
-    }
+
     if(rv.need_redraw) {
         if (rv.title_viewing) {
             wclear(rv.w_titles);
@@ -120,13 +122,10 @@ int main(int argc, char **argv) {
             rv.need_redraw = FALSE;
         }
     }
-    rv.c = wgetch(rv.w_par);
+    rv.c = getch();
     check_time();
-    // check resize
-    if(rv.c == KEY_RESIZE || rv.c == ERR)
-        need_resize = TRUE;
     // quit
-    else if(rv.c == 'q')
+    if(rv.c == 'q')
       break;
     // escape clears our g counter
     else if (rv.c == 0x1B)
