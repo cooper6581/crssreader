@@ -424,10 +424,10 @@ void select_article(void) {
   if (rw == NULL)
       return;
 
-  char command[1024];
   rss_item_t *ri = NULL;
   ri = get_item(rw->r, rv.cursor);
 #ifdef WITH_X
+  char command[1024];
 # ifdef LINUX
   snprintf(command, 1024, "xdg-open \"%s\"  2>&1 > /dev/null", ri->link);
 # else
