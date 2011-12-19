@@ -2,7 +2,9 @@
 #define ULOADER_H
 
 #define URL_MAX 1024
+#ifndef LINE_MAX
 #define LINE_MAX 1024
+#endif
 #define AUTH_MAX 32
 
 // These should probably be an ENUM?
