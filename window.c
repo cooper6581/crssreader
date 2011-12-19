@@ -143,6 +143,16 @@ void cleanup_view(void) {
   pthread_mutex_destroy(&rmutex);
 }
 
+void draw_item(int index, int cursor, WINDOW *item_window, const char *title) {
+    if (index == cursor) {
+        wattron(item_window, A_REVERSE);
+        mvwaddstr(item_window, index, 0, title);
+        wattroff(item_window, A_REVERSE);
+    }
+    else
+        mvwaddstr(item_window, index, 0, title);
+}
+
 void draw_articles(void) {
   rss_item_t *ri = NULL;
   rss_window_t *rw = NULL;
@@ -167,28 +177,15 @@ void draw_articles(void) {
 
   ri = rw->r->first;
   if(ri != NULL) {
-  for(int i = 0;ri != NULL;i++,ri=ri->next) {
-    // TODO: Make this a function
-      if(strlen(ri->title) < rv.x_par) {
-        if (i == rv.cursor) {
-          wattron(rv.w_articles,A_REVERSE);
-          mvwaddstr(rv.w_articles,i,0,ri->title);
-          wattroff(rv.w_articles,A_REVERSE);
-        }
-        else
-          mvwaddstr(rv.w_articles,i,0,ri->title);
-      } else {
+    for(int i=0; ri!=NULL; i++, ri=ri->next) {
+      if(strlen(ri->title) < rv.x_par)
+          draw_item(i, rv.cursor, rv.w_articles, ri->title);
+      else {
         char title[rv.x_par];
-        strncpy(title,ri->title,rv.x_par-1);
+        strncpy(title, ri->title, rv.x_par-1);
         title[rv.x_par-1] = '>';
         title[rv.x_par] = '\0';
-        if (i == rv.cursor) {
-          wattron(rv.w_articles,A_REVERSE);
-          mvwaddstr(rv.w_articles,i,0,title);
-          wattroff(rv.w_articles,A_REVERSE);
-        }
-        else
-          mvwaddstr(rv.w_articles,i,0,title);
+        draw_item(i, rv.cursor, rv.w_articles, title);
       }
     }
   }
@@ -214,15 +211,8 @@ void draw_titles(void) {
       rv.cursor = rv.w_amount-1;
 
   rw = rv.rw_first;
-  for(int i=0; rw != NULL; i++, rw = rw->next) {
-      if (i == rv.cursor) {
-          wattron(rv.w_titles, A_REVERSE);
-          mvwaddstr(rv.w_titles, i, 0, rw->r->title);
-          wattroff(rv.w_titles, A_REVERSE);
-      }
-      else
-          mvwaddstr(rv.w_titles, i, 0, rw->r->title);
-  }
+  for(int i=0; rw != NULL; i++, rw = rw->next)
+      draw_item(i, rv.cursor, rv.w_titles, rw->r->title);
 
   draw_status("Feeds Loaded");
 
