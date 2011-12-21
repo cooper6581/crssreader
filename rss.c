@@ -17,15 +17,15 @@
 #include "rss.h"
 #include "window.h"
 
-// globals
+/* globals */
 pthread_mutex_t rfmutex;
 pthread_t free_rf_thread;
 pthread_attr_t attr;
 
-// globals for proxies
+/* globals for proxies */
 proxy_config proxies;
 
-// prototypes
+/* prototypes */
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data);
 static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password);
 static char * _strip_html(char *s);
@@ -42,7 +42,7 @@ static void _startDocument (void *user_data);
 
 void init_parser(void) {
   int rcode;
-  //setup the parser and thread vars
+  /* setup the parser and thread vars */
   xmlInitParser();
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -59,7 +59,7 @@ void cleanup_parser(void) {
   curl_global_cleanup();
 }
 
-// Callback used by libcurl
+/* Callback used by libcurl */
 static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *data) {
   size_t realsize = size * nmemb;
   struct MemoryStruct *mem = (struct MemoryStruct *)data;
@@ -78,7 +78,7 @@ static size_t WriteMemoryCallback(void *ptr, size_t size,size_t nmemb, void *dat
   return realsize;
 }
 
-// Callback used by SAX to strip html
+/* Callback used by SAX to strip html */
 static void _character_callback(void *user_data, const xmlChar* ch, int len) {
   struct sax_parser *sp = user_data;
   sp->buffer = realloc(sp->buffer,sizeof(char) * (sp->bytes_copied + len + 1));
@@ -90,7 +90,7 @@ static void _character_callback(void *user_data, const xmlChar* ch, int len) {
   sp->bytes_copied += len;
 }
 
-// Callback used for end document
+/* Callback used for end document */
 static void _endDocument (void *user_data) {
   struct sax_parser *sp = user_data;
   sp->buffer[sp->bytes_copied] = '\0';
@@ -104,7 +104,7 @@ static void _endDocument (void *user_data) {
     free(sp->buffer);
 }
 
-// I hate this
+/* XXX: I hate this */
 static void _startDocument (void *user_data) {
   struct sax_parser *sp = user_data;
   if(sp->buffer != NULL)
@@ -112,23 +112,25 @@ static void _startDocument (void *user_data) {
   sp->final = NULL;
 }
 
-// Used to strip html from text
-// Returns character array that needs to be FREED!
+/*
+  Used to strip html from text
+  Returns character array that needs to be FREED!
+*/
 static char * _strip_html(char *s) {
   int mem_base;
   mem_base = xmlMemBlocks();
   struct sax_parser sp;
-  // init our sax parser struct
+  /* init our sax parser struct */
   sp.buffer = NULL;
   sp.final = NULL;
   sp.bytes_copied = 0;
-  // setup our callbacks
+  /* setup our callbacks */
   xmlSAXHandler handler; bzero(&handler, sizeof(xmlSAXHandler));
   handler.characters = &_character_callback;
   handler.endDocument = &_endDocument;
   handler.startDocument = &_startDocument;
 
-  // cross our fingers
+  /* cross our fingers */
   htmlSAXParseDoc((xmlChar*)s,"utf-8", &handler, &sp);
 
 #ifdef DEBUG
@@ -141,9 +143,11 @@ static char * _strip_html(char *s) {
   return sp.final;
 }
 
-// Internal function used to load url to memory
-// TODO:  Have the curl stuff be global so we can use the same
-// handle for the entire duration of the program
+/*
+  Internal function used to load url to memory
+  TODO:  Have the curl stuff be global so we can use the same
+  handle for the entire duration of the program
+*/
 static struct MemoryStruct _load_url(char *url, const int auth, const char *username, const char *password) {
   CURL *curl_handle;
   struct MemoryStruct chunk;
@@ -185,7 +189,7 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
       chunk.errored = 1;
       return chunk;
   }
-  // Gmail part
+  /* Gmail part */
   if(auth == TRUE) {
     char login[512];
     snprintf(login, 512, "%s:%s", username, password);
@@ -201,7 +205,7 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
     }
   }
 
-  // NTLM Auth
+  /* NTLM Auth */
   if(auth == NTLM) {
     char login[512];
     snprintf(login, 512, "%s:%s", username,password);
@@ -251,7 +255,7 @@ static struct MemoryStruct _load_url(char *url, const int auth, const char *user
   return chunk;
 }
 
-// free's the rss item linked list
+/* free's the rss item linked list */
 static void _free_items(rss_feed_t *r) {
   int i = 0;
   rss_item_t *ri;
@@ -274,16 +278,16 @@ static void _free_items(rss_feed_t *r) {
   }
 }
 
-// Populates the rss item linked list
+/* Populates the rss item linked list */
 static void _parse_items_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
   xmlChar *key;
   rss_item_t *ri;
 
   ri = malloc(sizeof(rss_item_t));
   ri->next = NULL;
-  // Drilling down into the item children
+  /* Drilling down into the item children */
   cur = cur->xmlChildrenNode;
-  // Cycle through the item child elements, dump these values into our rss item
+  /* Cycle through the item child elements, dump these values into our rss item */
   while (cur != NULL) {
     if (xmlStrcmp(cur->name, (const xmlChar *)"title") == 0) {
       key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
@@ -331,10 +335,10 @@ static void _parse_items_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
 
   ri = malloc(sizeof(rss_item_t));
   ri->next = NULL;
-  // Drilling down into the item children
+  /* Drilling down into the item children */
   cur = cur->xmlChildrenNode;
   cur = cur->next;
-  // Cycle through the item child elements, dump these values into our rss item
+  /* Cycle through the item child elements, dump these values into our rss item */
   while (cur != NULL) {
     if (xmlStrcmp(cur->name, (const xmlChar *)"title") == 0) {
       key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
@@ -386,7 +390,7 @@ static void _parse_channel_rss(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
       xmlFree(key);
      }
     } else if  (xmlStrcmp(cur->name, (const xmlChar *)"description") == 0) {
-     // Should html be stripped from channel descriptions?
+     /* Should html be stripped from channel descriptions? */
      key = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
      if (key != NULL) {
        strncpy(r->desc,(char *)key,CHARMAX);
@@ -422,7 +426,7 @@ static void _parse_channel_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
     } else if (xmlStrcmp(cur->name, (const xmlChar *)"link") == 0) {
       xmlChar *link_type;
       link_type = xmlGetProp(cur,(const xmlChar *)"rel");
-      // We only care about the self link, not the alternate link
+      /* We only care about the self link, not the alternate link */
       if(xmlStrcmp(link_type, (const xmlChar *)"self") == 0) {
         key = xmlGetProp(cur,(const xmlChar *)"href");
         if (key != NULL) {
@@ -446,24 +450,28 @@ static void _parse_channel_atom(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
 }
 
 
-// Grabs the title, link, and description of an RSS reed, then calls
-// _parse_items_rss to handle the linked list
-// TODO:  Find the correct way to dynamically support namespaces
+/*
+  Grabs the title, link, and description of an RSS reed, then calls
+  _parse_items_rss to handle the linked list
+  TODO:  Find the correct way to dynamically support namespaces
+*/
 static void _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
-  //TODO:  Clean this horrible mess up!
+  /* TODO:  Clean this horrible mess up! */
   if  (xmlStrcmp(cur->name, (const xmlChar *)"feed") == 0)
     _parse_channel_atom(r,doc,cur->xmlChildrenNode);
   else {
 
-  // Channel
+  /* Channel */
   cur = cur->xmlChildrenNode;
-  // HACK:  This deals with xml files that have namespaces
+  /* HACK:  This deals with xml files that have namespaces */
   if(cur->xmlChildrenNode == NULL)
     cur = cur->next;
-  // This is a really bad way to find out if the current
-  // xml file being parsed has a namespace.  If so, I assume
-  // it is slashdot, and parse the channel info from the child
-  // _parse_items should be handling this
+  /*
+     This is a really bad way to find out if the current
+     xml file being parsed has a namespace.  If so, I assume
+     it is slashdot, and parse the channel info from the child
+     _parse_items should be handling this
+  */
   if(cur->ns != NULL) {
     _parse_channel_rss(r,doc,cur->xmlChildrenNode);
   }
@@ -471,7 +479,7 @@ static void _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
     cur = cur->xmlChildrenNode;
     _parse_channel_rss(r,doc,cur);
   }
-  // Now we will populate the feed information
+  /* Now we will populate the feed information */
   while (cur != NULL) {
     if  (xmlStrcmp(cur->name, (const xmlChar *)"item") == 0)
       _parse_items_rss(r, doc, cur);
@@ -480,9 +488,11 @@ static void _parse_feed(rss_feed_t *r, xmlDocPtr doc, xmlNodePtr cur) {
   }
 }
 
-// public function, returns an rss feed item
-// reload arg will determine if the feed needs to simply
-// be loaded, or if it needs to be reloaded
+/*
+  public function, returns an rss feed item
+  reload arg will determine if the feed needs to simply
+  be loaded, or if it needs to be reloaded
+*/
 rss_feed_t *
 load_feed(char *url, int reload,
           rss_feed_t *feed, const int auth,
@@ -499,8 +509,10 @@ load_feed(char *url, int reload,
 
   buffer = _load_url(url, auth, username, password);
 
-  // if an error ocurred during curl shit, exit
-  // XXX: this is ugly!
+  /*
+     if an error ocurred during curl shit, exit
+     XXX: this is ugly!
+  */
   if (buffer.errored) {
       alert(buffer.error);
       if(buffer.memory)
@@ -513,11 +525,11 @@ load_feed(char *url, int reload,
       free_feed(feed);
   }
 
-  // do xml parsing
+  /* do xml parsing */
   doc = xmlReadMemory(buffer.memory,buffer.size,"noname.xml",NULL,0);
   if (doc == NULL) {
     alert("Unable to parse XML");
-    //fprintf(stderr,"Unable to parse xml from %s\n",url);
+    /* fprintf(stderr,"Unable to parse xml from %s\n",url); */
     if(buffer.memory)
       free(buffer.memory);
     return NULL;
@@ -525,14 +537,14 @@ load_feed(char *url, int reload,
 
   cur = xmlDocGetRootElement(doc);
 
-  // This shouldn't ever happen
+  /* XXX: This shouldn't ever happen */
   if (cur == NULL) {
     fprintf(stderr,"empty document\n");
     xmlFreeDoc(doc);
     return NULL;
   }
 
-  // TODO: Not clean
+  /* TODO: Not clean */
   rf->first = NULL;
   rf->articles = 0;
   _parse_feed(rf, doc, cur);
@@ -545,7 +557,7 @@ load_feed(char *url, int reload,
   return rf;
 }
 
-// public function to print an rss feed
+/* public function to print an rss feed */
 void print_feed(rss_feed_t *r) {
   rss_item_t *ri;
   int article_number = 1;
@@ -563,13 +575,15 @@ void print_feed(rss_feed_t *r) {
   }
 }
 
-// public function to cleanup an rss feed
+/* public function to cleanup an rss feed */
 void free_feed(rss_feed_t *rf) {
     if(rf != NULL){
         if(rf->first != NULL) {
-          //pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
-          //pthread_join(free_rf_thread,NULL);
-          //pthread_detach(free_rf_thread);
+            /* XXX: ???
+               pthread_create(&free_rf_thread,&attr,_free_items,(void *)rf);
+               pthread_join(free_rf_thread,NULL);
+               pthread_detach(free_rf_thread);
+               */
           _free_items(rf);
         }
         free(rf);
@@ -578,7 +592,9 @@ void free_feed(rss_feed_t *rf) {
 
 rss_item_t * get_item(rss_feed_t *rf, int index) {
   rss_item_t *ri = rf->first;
-  for(int i=0;i<index && ri->next != NULL;i++)
-  ri = ri->next;
+  int i;
+
+  for(i=0;i<index && ri->next != NULL;i++)
+      ri = ri->next;
   return ri;
 }

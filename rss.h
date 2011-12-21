@@ -38,7 +38,7 @@ struct sax_parser {
   int bytes_copied;
 };
 
-// public accessable prototypes
+/* public accessible prototypes */
 rss_feed_t * load_feed(char *url, int reload, rss_feed_t *feed, const int auth, const char *username, const char *password);
 rss_item_t * get_item(rss_feed_t *rf, int index);
 void print_feed(rss_feed_t *rf);

@@ -10,19 +10,19 @@
 
 #define PADLINES 128
 
-//globals
+/* globals */
 time_t start_time;
 time_t temp_time;
 time_t timer;
 pthread_mutex_t rmutex;
 
-//prototypes
+/* prototypes */
 static char * _pad_message(const char *msg);
 
-// globals for window
+/* globals for window */
 rss_view_t rv;
 
-// This file contains public and private functions for the GUI
+/* This file contains public and private functions for the GUI */
 int init_view(void) {
   rv.rw_first = NULL;
   rv.cursor = 0;
@@ -34,7 +34,7 @@ int init_view(void) {
   noecho();
   halfdelay(10);
   use_default_colors();
-  // This will probably fail in OSX
+  /* This will probably fail in OSX */
   curs_set(0);
   getmaxyx(rv.w_par, rv.y_par, rv.x_par);
   rv.y_view = 0;
@@ -45,7 +45,7 @@ int init_view(void) {
   rv.need_redraw = TRUE;
   rv.is_reloading = FALSE;
   rv.title_viewing = TRUE;
-  // setup our mutex
+  /* setup our mutex */
   pthread_mutex_init(&rmutex,NULL);
 
   return 14;
@@ -64,7 +64,7 @@ int reinit_view(void) {
   return 14;
 }
 
-// TODO: Take autorefresh argument
+/* TODO: Take autorefresh argument */
 int add_feed(char *url, const int autorefresh, const int auth, char *username, char *password) {
   rss_window_t *rw;
   rss_feed_t *rf;
@@ -78,11 +78,11 @@ int add_feed(char *url, const int autorefresh, const int auth, char *username, c
   rf = load_feed(url,0,NULL,auth,username,password);
 
   if (rf == NULL) {
-      // something bad happened, we shouldn't be allocating anything
+      /* something bad happened, we shouldn't be allocating anything */
       return -1;
   }
 
-  // setup our rss window
+  /* setup our rss window */
   rw = malloc(sizeof(rss_window_t));
   rw->cursor = 0;
   rw->r = rf;
@@ -100,12 +100,12 @@ int add_feed(char *url, const int autorefresh, const int auth, char *username, c
     strncpy(rw->password,password,AUTH_MAX);
   }
 
-  // Add time time
+  /* Add time time */
   time(&rawtime);
   timeinfo = localtime(&rawtime);
   strftime(rw->updated,6,"%H:%M",timeinfo);
 
-  // add the rss window
+  /* add the rss window */
   rv.w_amount++;
   if(rv.rw_first == NULL) {
     rv.rw_first = rw;
@@ -139,7 +139,7 @@ void cleanup_view(void) {
     free(rw);
     rw=temp;
   }
-  // clean up the mutex
+  /* clean up the mutex */
   pthread_mutex_destroy(&rmutex);
 }
 
@@ -177,7 +177,8 @@ void draw_articles(void) {
 
   ri = rw->r->first;
   if(ri != NULL) {
-    for(int i=0; ri!=NULL; i++, ri=ri->next) {
+    int i;
+    for(i=0; ri!=NULL; i++, ri=ri->next) {
       if(strlen(ri->title) < rv.x_par)
           draw_item(i, rv.cursor, rv.w_articles, ri->title);
       else {
@@ -199,7 +200,7 @@ void draw_articles(void) {
   prefresh(rv.w_articles,rv.y_view,0,0,0,rv.y_par-2,rv.x_par);
 }
 
-// show all feed urls along with the window number
+/* show all feed urls along with the window number */
 void draw_titles(void) {
   rss_window_t *rw = NULL;
 
@@ -211,7 +212,8 @@ void draw_titles(void) {
       rv.cursor = rv.w_amount-1;
 
   rw = rv.rw_first;
-  for(int i=0; rw != NULL; i++, rw = rw->next)
+  int i;
+  for(i=0; rw != NULL; i++, rw = rw->next)
       draw_item(i, rv.cursor, rv.w_titles, rw->r->title);
 
   draw_status("Feeds Loaded");
@@ -227,11 +229,12 @@ void draw_titles(void) {
 static char * _pad_message(const char *msg) {
   char *padded;
   int size_of_msg = 0;
+  int i;
   padded = malloc(sizeof(char) * rv.x_par + 1);
   assert (padded != NULL);
   size_of_msg = (int) strlen(msg);
   strncpy(padded,msg,rv.x_par + 1);
-  for(int i=size_of_msg;i<rv.x_par;i++)
+  for(i=size_of_msg;i<rv.x_par;i++)
     padded[i] = ' ';
 
 
@@ -254,8 +257,10 @@ void * reload(void *t) {
   pthread_mutex_lock(&rmutex);
   rv.is_reloading = TRUE;
   memset(tmp_message,0,rv.x_par);
-  // if t has a value, lets get that rss_window index, if not
-  // we will default to current window
+  /*
+     if it has a value, lets get that rss_window index, if not
+     we will default to current window
+  */
   if(t == NULL) {
       rw = get_current_rss_window();
       if (rw == NULL) {
@@ -273,17 +278,19 @@ void * reload(void *t) {
   rw->is_loading_feed = TRUE;
   result = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
   rw->is_loading_feed = FALSE;
-  // Need to see if load_feed failed so that we don't overwrite
-  // the feed's URL info in the event load_feed returns NULL
+  /*
+     Need to see if load_feed failed so that we don't overwrite
+     the feed's URL info in the event load_feed returns NULL
+  */
   if (result == NULL) {
-    // Unlock the mutex, and pretend nothing ever happened
+    /* Unlock the mutex, and pretend nothing ever happened */
     rv.is_reloading = FALSE;
     pthread_mutex_unlock(&rmutex);
     pthread_exit(NULL);
   }
-  // load_feed should have succeded
+  /* load_feed should have succeded */
   rw->r = result;
-  // set the updated time of the window
+  /* set the updated time of the window */
   time(&rawtime);
   timeinfo = localtime(&rawtime);
   strftime(rw->updated,6,"%H:%M",timeinfo);
@@ -296,13 +303,14 @@ void * reload(void *t) {
   pthread_exit(NULL);
 }
 
-// This is what runs when you do shift R
+/* This is what runs when you do shift R */
 void * reload_all(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
   rss_window_t *rw = NULL;
   rss_feed_t *result;
+  int i;
 
   if (rv.is_reloading)
     pthread_exit(NULL);
@@ -310,22 +318,22 @@ void * reload_all(void *t) {
   pthread_mutex_lock(&rmutex);
   rv.is_reloading = TRUE;
   memset(tmp_message,0,rv.x_par);
-  for(int i = 0;i<rv.w_amount;i++) {
+  for(i = 0;i<rv.w_amount;i++) {
     rw = get_rss_window_at_index(i);
-    // make sure that there isn't another thread messing with rw
+    /* make sure that there isn't another thread messing with rw */
     snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
     draw_status(tmp_message);
     rw->is_loading_feed = TRUE;
     result = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
     rw->is_loading_feed = FALSE;
     if (result == NULL) {
-      // Let's try again at the default auto_refresh
+      /* Let's try again at the default auto_refresh */
       rw->timer = rw->auto_refresh;
       continue;
     }
-    // load_feed should have completed
+    /* load_feed should have completed */
     rw->r = result;
-    // set the updated time of the window
+    /* set the updated time of the window */
     time(&rawtime);
     timeinfo = localtime(&rawtime);
     strftime(rw->updated,6,"%H:%M",timeinfo);
@@ -339,23 +347,26 @@ void * reload_all(void *t) {
   pthread_exit(NULL);
 }
 
-// Call back used for auto refreshing rss_windows
+/* Call back used for auto refreshing rss_windows */
 void * auto_refresh(void *t) {
   time_t rawtime;
   struct tm * timeinfo;
   char tmp_message[rv.x_par];
   rss_window_t *rw = NULL;
+  int i;
 
   pthread_mutex_lock(&rmutex);
 
   memset(tmp_message,0,rv.x_par);
-  // cycle through each of the rss windows to see which ones
-  // have expired timers
-  for(int i = 0;i<rv.w_amount;i++) {
+  /*
+     cycle through each of the rss windows to see which ones
+     have expired timers
+  */
+  for(i = 0;i<rv.w_amount;i++) {
     rw = get_rss_window_at_index(i);
-    // If this window has an expired timer, update it!
-    // TODO:  Best practices for mutex locking
-    // the check for -1 is to make sure we don't update a disabled feed
+    /* If this window has an expired timer, update it!
+       TODO:  Best practices for mutex locking
+       the check for -1 is to make sure we don't update a disabled feed */
     if (rw->timer <= 0 && rw->timer != -1) {
       snprintf(tmp_message,rv.x_par,"Reloading %s",rw->r->title);
 #ifdef DEBUG
@@ -369,7 +380,7 @@ void * auto_refresh(void *t) {
       rw->r = load_feed(rw->r->url,1,rw->r,rw->auth,rw->username,rw->password);
       rw->is_loading_feed = FALSE;
       rw->timer = rw->auto_refresh;
-      // set the updated time of the window
+      /* set the updated time of the window */
       time(&rawtime);
       timeinfo = localtime(&rawtime);
       strftime(rw->updated,6,"%H:%M",timeinfo);
@@ -382,7 +393,7 @@ void * auto_refresh(void *t) {
   pthread_exit(NULL);
 }
 
-// Draws the bar at the bottom of the screen
+/* Draws the bar at the bottom of the screen */
 void draw_status(const char *msg) {
   rss_feed_t *rf = NULL;
   rss_window_t *rw = NULL;
@@ -390,7 +401,7 @@ void draw_status(const char *msg) {
   char *test_message;
 
   memset(status,0,rv.x_par);
-  //wclear(rv.w_par);
+  /* wclear(rv.w_par); */
   wattron(rv.w_par,A_REVERSE);
   if(msg != NULL)
     sprintf(status,"(%s)",msg);
@@ -445,8 +456,8 @@ void show_article(void) {
 }
 
 void select_feed(void) {
-  // the index we want, is where our cursor is
-  // when viewing the titles
+  /* the index we want, is where our cursor is
+     when viewing the titles */
   rv.windex = rv.cursor;
 }
 
@@ -458,8 +469,9 @@ void debug_msg(const char *msg) {
 
 rss_window_t * get_current_rss_window(void) {
   rss_window_t *rw = NULL;
+  int i;
   rw = rv.rw_first;
-  for(int i = 0; i < rv.windex && rw != NULL;i++)
+  for(i = 0; i < rv.windex && rw != NULL;i++)
       rw = rw->next;
   return rw;
 }
@@ -469,14 +481,13 @@ rss_window_t * get_rss_window_at_index(int index) {
   rw = rv.rw_first;
   if (rw == NULL)
       return NULL;
-
-  for(int i = 0; i != index; i++)
+  int i;
+  for(i = 0; i != index; i++)
     rw = rw->next;
   return rw;
 }
 
-// copies the select item to the clipboard
-// NOTE:  Only OSX is currently supported
+/* copies the select item to the clipboard */
 void yank(void) {
   rss_window_t *rw;
 
@@ -499,36 +510,37 @@ void yank(void) {
   }
 }
 
-// Function used to decrease the timers for each rss_window
+/* Function used to decrease the timers for each rss_window */
 void check_time(void) {
     time_t current_time;
     rss_window_t *rw;
     current_time = time(NULL);
     if (current_time > temp_time) {
-        // cycle through all of our rss windows, and dec the timers
-        for(int i = 0; i < rv.w_amount; i++) {
+        /* cycle through all of our rss windows, and dec the timers */
+        int i;
+        for(i = 0; i < rv.w_amount; i++) {
             rw = get_rss_window_at_index(i);
-            // make sure the timer is enabled before dec
-            // also make sure we don't accidentaly disable a real timer
+            /* make sure the timer is enabled before dec
+               also make sure we don't accidentaly disable a real timer */
             if(rw->timer != -1 && rw->timer != 0)
                 rw->timer--;
             temp_time = current_time;
-            // Launch a thread to refresh if one of the timers expired
-            // this also is what keeps our threads sane.  check_time
-            // will set is_loading_feed to TRUE, the thread will set it
-            // to FALSE after it has reloaded the feed.
+            /* Launch a thread to refresh if one of the timers expired
+               this also is what keeps our threads sane.  check_time
+               will set is_loading_feed to TRUE, the thread will set it
+               to FALSE after it has reloaded the feed. */
             if(rw->timer == 0) {
                 if(rw->is_loading_feed == FALSE) {
                     pthread_t thread;
                     int error_no;
                     error_no = pthread_create(&thread, NULL, auto_refresh, NULL);
                     if (error_no && error_no != EAGAIN) {
-                        // detach if we were unable to create.
-                        //pthread_detach(thread);
+                        /* detach if we were unable to create.
+                           pthread_detach(thread); */
                         fprintf(stderr,"pthread_create returned %s\n",strerror(error_no));
                         exit(EXIT_FAILURE);
                     }
-                    // We were able to launch a thread, remember to detach...
+                    /* We were able to launch a thread, remember to detach... */
                     if (error_no != EAGAIN) {
                       pthread_detach(thread);
                       rw->is_loading_feed = TRUE;
@@ -549,11 +561,11 @@ void alert(const char *msg) {
   assert(w_alert || w_alert_text != NULL);
   box(w_alert, 0 , 0);
   mvwaddstr(w_alert_text,0,0,msg);
-  // Input is going to go into blocking mode on purpose to leave window up until a key is pressed
+  /* Input is going to go into blocking mode on purpose to leave window up until a key is pressed */
   raw();
   wgetch(w_alert);
-  // cleanup the window, and go back to non blocking input mode
-  // ugly way to clear the border completely
+  /* cleanup the window, and go back to non blocking input mode
+     ugly way to clear the border completely */
   wborder(w_alert, ' ', ' ', ' ',' ',' ',' ',' ',' ');
   werase(w_alert);
   werase(w_alert_text);
@@ -565,7 +577,7 @@ void alert(const char *msg) {
   rv.need_redraw = TRUE;
 }
 
-// This is a content window (larger than an alert window)
+/* This is a content window (larger than an alert window) */
 void content(const char *msg) {
   WINDOW *w_alert = NULL;
   WINDOW *w_alert_text = NULL;
@@ -576,11 +588,11 @@ void content(const char *msg) {
   assert(w_alert || w_alert_text != NULL);
   box(w_alert, 0 , 0);
   mvwaddstr(w_alert_text,0,0,msg);
-  // Input is going to go into blocking mode on purpose to leave window up until a key is pressed
+  /* Input is going to go into blocking mode on purpose to leave window up until a key is pressed */
   raw();
   wgetch(w_alert);
-  // cleanup the window, and go back to non blocking input mode
-  // ugly way to clear the border completely
+  /* cleanup the window, and go back to non blocking input mode
+     ugly way to clear the border completely */
   wborder(w_alert, ' ', ' ', ' ',' ',' ',' ',' ',' ');
   werase(w_alert);
   werase(w_alert_text);

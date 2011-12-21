@@ -6,56 +6,56 @@
 
 #define AUTH_MAX 32
 
-// struct used to represent data which is displayed in an rss window
+/* struct used to represent data which is displayed in an rss window */
 typedef struct rss_window {
-  // 1 rss feed per rss_window
+  /* 1 rss feed per rss_window */
   rss_feed_t *r;
   struct rss_window *next;
   int cursor;
   char updated[6];
-  // this is the auto refresh value for the feed
-  // -1 will mean disabled
+  /* this is the auto refresh value for the feed
+     -1 will mean disabled */
   int auto_refresh;
-  // This is our actual timer
+  /* This is our actual timer */
   int timer;
-  // These fields are to support rss feeds that require authentication
+  /* These fields are to support rss feeds that require authentication */
   int auth;
   char *username;
   char *password;
-  // This field will be used to make sure we don't draw articles for
-  // a window that is still being updated
+  /* This field will be used to make sure we don't draw articles for
+     a window that is still being updated */
   int is_loading_feed;
 
 } rss_window_t;
 
-// encapsulates the main window and article display
+/* encapsulates the main window and article display */
 typedef struct rss_view {
-  // our awesome 1 byte input buffer!
+  /* our awesome 1 byte input buffer! */
   char c;
-  // Our global cursor
+  /* Our global cursor */
   int cursor;
-  // the size of the terminal window when ncurses is launched, or when the
-  // window is resized
+  /* the size of the terminal window when ncurses is launched, or when the
+     window is resized */
   int x_par;
   int y_par;
-  // Our window index
+  /* Our window index */
   int windex;
-  // Our parent window, article view window and titles view window
+  /* Our parent window, article view window and titles view window */
   WINDOW *w_par;
   WINDOW *w_articles;
   WINDOW *w_titles;
-  // Linked list of rss_windows
+  /* Linked list of rss_windows */
   rss_window_t *rw_first;
   rss_window_t *rw_last;
-  // and the amount we have
+  /* and the amount we have */
   int w_amount;
-  // a hopefully clean and cpu friendly way to handle screen redraw
+  /* a hopefully clean and cpu friendly way to handle screen redraw */
   int need_redraw;
-  // if I end up needing more status states, this will need to be an ENUM
+  /* if I end up needing more status states, this will need to be an ENUM */
   int is_reloading;
-  // are we drawing titles
+  /* are we drawing titles */
   int title_viewing;
-  // view stuff to make scrolling more like vi
+  /* view stuff to make scrolling more like vi */
   int y_view;
 } rss_view_t;
 

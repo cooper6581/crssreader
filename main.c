@@ -13,13 +13,13 @@
 #include "uloader.h"
 #include "common.h"
 
-// config filename
+/* config filename */
 const char def_cfg_fname[] = RC_NAME;
-// rssreader version
-//XXX: move this into a config.h file
+/* rssreader version
+   XXX: move this into a config.h file */
 const char *version = "0.0.1";
 
-// our global rss_view
+/* our global rss_view */
 extern rss_view_t rv;
 
 int help(const char *prog_name) {
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
   pthread_t rthread;
   uid_t uid;
   struct passwd *pwd;
-  // Will be cleaned when the input handler is moved outside of main
+  /* Will be cleaned when the input handler is moved outside of main */
   int hit_g = 0;
   int tmp;
   char tmp_path[MAXPATHLEN];
@@ -94,9 +94,9 @@ int main(int argc, char **argv) {
   refresh();
   prefresh(rv.w_titles, 0, 0, 0, 0, rv.y_par-2, rv.x_par);
 
-  // Main loop
+  /* Main loop */
   for(;;) {
-    // Check for resize
+    /* Check for resize */
     if(is_term_resized(rv.y_par, rv.x_par) == TRUE)
         assert(reinit_view());
 
@@ -118,13 +118,13 @@ int main(int argc, char **argv) {
     }
     rv.c = getch();
     check_time();
-    // quit
+    /* quit */
     if(rv.c == 'q')
       break;
-    // escape clears our g counter
+    /* escape clears our g counter */
     else if (rv.c == 0x1B)
       hit_g = 0;
-    // go to top gg
+    /* go to top gg */
     else if (rv.c == 'g') {
       hit_g++;
       if (hit_g == 2) {
@@ -135,56 +135,56 @@ int main(int argc, char **argv) {
     } else if (rv.c == '"') {
         rv.title_viewing = !rv.title_viewing;
         rv.need_redraw = TRUE;
-    // reload
+    /* reload */
     } else if (rv.c == 'r') {
       pthread_create(&rthread, NULL, reload,NULL);
       pthread_detach(rthread);
-    // reload all
+    /* reload all */
     } else if (rv.c == 'R') {
       pthread_create(&rthread, NULL, reload_all,NULL);
       pthread_detach(rthread);
-    // go down article
+    /* go down article */
     } else if (rv.c == 'j') {
       rv.cursor += 1;
       rv.need_redraw = TRUE;
-    // page down ctrl+d
+    /* page down ctrl+d */
     } else if (rv.c == 0x04) {
       rv.cursor += rv.y_par/2;
       rv.need_redraw = TRUE;
-    // go up
+    /* go up */
     } else if (rv.c == 'k') {
       rv.cursor -= 1;
       rv.need_redraw = TRUE;
-    // page up ctrl+u
+    /* page up ctrl+u */
     } else if (rv.c == 0x15) {
       rv.cursor -= rv.y_par/2;
       rv.need_redraw = TRUE;
-    // switch window left
+    /* switch window left */
     } else if ((rv.c == 'H' || rv.c == 'h') && !rv.title_viewing) {
       if(rv.windex > 0)
         rv.windex -= 1;
       else
         rv.windex = rv.w_amount-1;
       rv.need_redraw = TRUE;
-    // window right
+    /* window right */
     } else if ((rv.c == 'L' || rv.c == 'l') && !rv.title_viewing) {
       if(rv.windex < rv.w_amount-1)
         rv.windex += 1;
       else
         rv.windex = 0;
       rv.need_redraw = TRUE;
-    // G bottom of the page
-    // HACK for now
+    /* G bottom of the page
+       HACK for now */
     } else if (rv.c == 'G') {
       rv.cursor += 9999;
       rv.need_redraw = TRUE;
-    // Copies URL to clipboard
+    /* Copies URL to clipboard */
     } else if (rv.c == 'y') {
       yank();
-    // Just a test to see if the pop-up window is working
+    /* XXX: Just a test to see if the pop-up window is working */
     } else if (rv.c == '?') {
       alert("This is a help window!\n I'm going to purposefully type a lot of text here to see what happens");
-    // enter
+    /* enter */
     } else if (rv.c == '\n') {
         if (rv.title_viewing) {
             rv.title_viewing = !rv.title_viewing;
@@ -198,9 +198,10 @@ int main(int argc, char **argv) {
     }
   }
 
-  // cleanup
+  /* cleanup */
   endwin();
   cleanup_view();
   cleanup_parser();
+  /* XXX: should this be here?!? */
   pthread_exit(NULL);
 }

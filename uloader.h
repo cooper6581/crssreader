@@ -7,7 +7,7 @@
 #endif
 #define AUTH_MAX 32
 
-// These should probably be an ENUM?
+/* XXX: These should probably be an ENUM? */
 #define UL_KEY_URL 1
 #define UL_KEY_AUTH 2
 #define UL_KEY_REFRESH 3

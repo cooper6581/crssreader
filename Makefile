@@ -7,7 +7,7 @@ TARGET=rssreader
 
 CC=gcc
 # endpwent and getpwent need _BSD_SOURCE or POSIX feature macros to be defined
-CFLAGS= -O0 -Wall -std=c99 -pthread -D_BSD_SOURCE
+CFLAGS= -O0 -Wall -std=c99 -pthread -D_BSD_SOURCE -ansi
 LIBS=-l xml2 -l curl
 DBGFLAGS=
 LDFLAGS=-L$(PREFIX)/lib
