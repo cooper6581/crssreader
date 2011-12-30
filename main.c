@@ -102,14 +102,12 @@ int main(int argc, char **argv) {
 
     if(rv.need_redraw) {
         if (rv.title_viewing) {
-            wclear(rv.w_titles);
             refresh();
             wrefresh(rv.w_titles);
             draw_titles();
             rv.need_redraw = FALSE;
         }
         else {
-            wclear(rv.w_articles);
             refresh();
             wrefresh(rv.w_articles);
             draw_articles();
@@ -202,6 +200,5 @@ int main(int argc, char **argv) {
   endwin();
   cleanup_view();
   cleanup_parser();
-  /* XXX: should this be here?!? */
-  pthread_exit(NULL);
+  return 0;
 }
